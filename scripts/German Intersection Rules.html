@@ -1,0 +1,1910 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>German Intersection Rules</title>
+<style>
+    :root {
+        --bg: #eef0f4;            --surface: #ffffff;       --surface-2: #f1f3f6;
+        --fg: #1d2127;            --fg-muted: #5c6673;      --border: #ccd2da;
+        --shadow: rgba(16, 20, 28, 0.10);
+        --btn-bg: #ffffff;        --btn-fg: #1d2127;        --btn-hover: #e9edf2;
+        --btn-on-bg: #2f3640;     --btn-on-fg: #ffffff;
+        --tab-bg: #dde2e8;        --tab-fg: #3d4651;
+        --go: #1b7f3b;            --go-fg: #ffffff;       --track: #d7dce3;
+        --note-bg: #fffbe6;       --note-rule: #e3bf00;
+        --frame: #2b3038;
+        --color-red: #d32f2f; --color-blue: #1976d2; --color-green: #388e3c;
+        --color-orange: #f57c00; --color-gray: #6c757d; --color-ped-green: #4caf50;
+    }
+    @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+            --bg: #101319;          --surface: #1a1f27;     --surface-2: #222833;
+            --fg: #e7ecf3;          --fg-muted: #99a4b3;    --border: #39414f;
+            --shadow: rgba(0, 0, 0, 0.45);
+            --btn-bg: #262d38;      --btn-fg: #e7ecf3;      --btn-hover: #323b49;
+            --btn-on-bg: #2f81d6;   --btn-on-fg: #ffffff;
+            --tab-bg: #262d38;      --tab-fg: #b9c3d0;
+            --go: #1f9048;          --go-fg: #ffffff;      --track: #333b48;
+            --note-bg: #26251a;     --note-rule: #b89b00;
+            --frame: #000308;
+            color-scheme: dark;
+        }
+    }
+
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background: var(--bg); color: var(--fg); margin: 0;
+        padding-block: 20px; padding-inline: 16px;
+        display: flex; flex-direction: column; align-items: center; }
+    
+    /* Widened container to fit side-by-side layout */
+    .container { background: var(--surface); padding: 20px; border-radius: 10px;
+        box-shadow: 0 4px 14px var(--shadow); width: 100%; max-width: 1300px;
+        box-sizing: border-box; }
+    h1 { text-align: center; margin-top: 0; font-size: 24px; color: var(--fg); }
+    .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+    .tab-btn { flex: 1; min-width: 0; padding: 14px; font-size: 16px; font-weight: bold;
+        border: none; background: var(--tab-bg); color: var(--tab-fg); cursor: pointer;
+        border-radius: 4px; transition: 0.2s; font-family: inherit; }
+    .tab-btn:hover { background: var(--btn-hover); }
+    .tab-btn.active { background: var(--btn-on-bg); color: var(--btn-on-fg); }
+    .controls { margin-bottom: 15px; }
+    .control-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+    .btn { padding: 8px 14px; border: 1px solid var(--border); background: var(--btn-bg);
+        color: var(--btn-fg); border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: 500; }
+    .btn:hover { background: var(--btn-hover); }
+    .btn.active { background: var(--btn-on-bg); color: var(--btn-on-fg); border-color: var(--btn-on-bg); }
+    .btn-play, .btn-play:hover { background: var(--go); color: var(--go-fg); border-color: var(--go); font-weight: 600; }
+    .btn:focus-visible, .tab-btn:focus-visible, .speed button:focus-visible,
+    .scrub:focus-visible { outline: 2px solid var(--color-blue); outline-offset: 2px; }
+    .clock { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13px; color: var(--fg-muted); margin-left: 4px; }
+    
+    .scrub { flex: 1; min-width: 120px; align-self: center; cursor: pointer; -webkit-appearance: none; appearance: none; height: 18px; background: transparent; }
+    .scrub::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; background: linear-gradient(to right, var(--go) 0 var(--pct, 0%), var(--track) var(--pct, 0%) 100%); }
+    .scrub::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 15px; height: 15px; margin-top: -4.5px; border-radius: 50%; background: var(--go); border: 2px solid var(--surface); }
+    .scrub::-moz-range-track { height: 6px; border-radius: 3px; background: var(--track); }
+    .scrub::-moz-range-progress { height: 6px; border-radius: 3px; background: var(--go); }
+    .scrub::-moz-range-thumb { width: 15px; height: 15px; border: 2px solid var(--surface); border-radius: 50%; background: var(--go); }
+    
+    .speed { display: flex; align-items: center; gap: 4px; align-self: center; border: 1px solid var(--border); border-radius: 4px; padding: 2px; background: var(--btn-bg); }
+    .speed button { border: none; background: none; cursor: pointer; font-size: 15px; width: 24px; line-height: 20px; border-radius: 3px; color: var(--btn-fg); }
+    .speed button:hover { background: var(--btn-hover); }
+    .speed span { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; min-width: 34px; text-align: center; color: var(--fg-muted); }
+    
+    /* New Side-by-Side Flex Layout */
+    .content-row { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; width: 100%; }
+    .svg-wrapper { background: #555; border-radius: 6px; overflow: hidden; border: 2px solid var(--frame); flex: 1 1 55%; min-width: 300px; margin-bottom: 0; }
+    #main-svg { display: block; width: 100%; height: auto; }
+    .side-panel { flex: 1 1 40%; min-width: 300px; display: flex; flex-direction: column; gap: 20px; }
+    
+    .info-box { background: var(--note-bg); border-left: 4px solid var(--note-rule); color: var(--fg); padding: 15px; margin-bottom: 0; border-radius: 0 4px 4px 0; line-height: 1.5; font-size: 15px; }
+    .legend { display: flex; flex-wrap: wrap; gap: 15px; background: var(--surface-2); color: var(--fg); padding: 15px; border-radius: 6px; font-size: 13px; align-items: center; margin-bottom: 0; }
+    
+    .l-item { display: flex; align-items: center; gap: 8px; line-height: 1.35; flex: 1 1 290px; min-width: 0; }
+    .l-item > svg, .l-item > div { flex: 0 0 auto; }
+    .l-item > span { flex: 1 1 auto; min-width: 0; }
+    .glyph { vertical-align: -5px; margin: 0 2px; }
+    .l-line { width: 24px; height: 4px; }
+    .l-dash { border-bottom-style: dashed; border-bottom-width: 4px; height: 0; width: 24px; }
+    .l-sign { width: 16px; height: 16px; display: inline-flex; justify-content: center; align-items: center; font-weight: bold; font-size: 9px; color: white; }
+    @media (prefers-reduced-motion: reduce) { .tab-btn, .btn { transition: none; } }
+</style>
+</head>
+<body>
+<div class="container">
+    <h1>German Intersection Rules</h1>
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab(1)">SIGNALIZED</button>
+        <button class="tab-btn" onclick="switchTab(2)">UNSIGNALIZED</button>
+    </div>
+    <div class="controls" id="controls"></div>
+    <div id="anim-bar" class="control-row"></div>
+    
+    <div class="content-row">
+        <div class="svg-wrapper">
+            <svg viewBox="100 0 480 480" id="main-svg">
+                <defs>
+                    <marker id="arrow-red" markerUnits="userSpaceOnUse" markerWidth="21" markerHeight="18" refX="19" refY="9" orient="auto">
+                      <path d="M0,0.4 L21,9 L0,17.6 Z" fill="#ffffff" opacity="0.5"/>
+                      <path d="M2.4,3 L17.8,9 L2.4,15 Z" fill="#ff4a42"/></marker>
+                    <marker id="arrow-blue" markerUnits="userSpaceOnUse" markerWidth="21" markerHeight="18" refX="19" refY="9" orient="auto">
+                      <path d="M0,0.4 L21,9 L0,17.6 Z" fill="#ffffff" opacity="0.5"/>
+                      <path d="M2.4,3 L17.8,9 L2.4,15 Z" fill="#3ea5ff"/></marker>
+                    <marker id="arrow-green" markerUnits="userSpaceOnUse" markerWidth="21" markerHeight="18" refX="19" refY="9" orient="auto">
+                      <path d="M0,0.4 L21,9 L0,17.6 Z" fill="#ffffff" opacity="0.5"/>
+                      <path d="M2.4,3 L17.8,9 L2.4,15 Z" fill="#4ade4a"/></marker>
+                    <marker id="arrow-orange" markerUnits="userSpaceOnUse" markerWidth="21" markerHeight="18" refX="19" refY="9" orient="auto">
+                      <path d="M0,0.4 L21,9 L0,17.6 Z" fill="#ffffff" opacity="0.5"/>
+                      <path d="M2.4,3 L17.8,9 L2.4,15 Z" fill="#ffa52e"/></marker>
+                </defs>
+                <g id="layer-bg"></g>
+                <g id="layer-roads"></g>
+                <g id="layer-peds"></g>
+                <g id="layer-signals"></g>
+                <g id="layer-paths"></g>
+                <g id="layer-markers"></g>
+                <g id="layer-vehicles"></g>
+                <g id="layer-key"></g>
+                <g id="layer-anno"></g>
+            </svg>
+        </div>
+        
+        <div class="side-panel">
+            <div class="info-box" id="info-box"></div>
+            <div class="legend" id="legend"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentTab = 1, currentScen = 1, currentPhase = 1;
+
+const P = {
+    // SIGNALIZED (3 lanes)
+    s_nb_l:   'M 352 480 L 352 312 A 84 84 0 0 0 268 228 L 100 228',
+    s_nb_s:   'M 376 480 L 376 0',
+    s_nb_r:   'M 400 480 L 400 290 Q 400 276 420 276 L 580 276',
+    s_nb_l_p: 'M 352 480 L 352 312 A 84 84 0 0 0 268 228 L 100 228',
+    s_sb_l:   'M 328 0 L 328 168 A 84 84 0 0 0 412 252 L 580 252',
+    s_sb_s:   'M 304 0 L 304 480',
+    s_sb_r:   'M 280 0 L 280 190 Q 280 204 260 204 L 100 204',
+    s_sb_l_p: 'M 328 0 L 328 168 A 84 84 0 0 0 412 252 L 580 252',
+    s_eb_l:   'M 100 252 L 268 252 A 84 84 0 0 0 352 168 L 352 0',
+    s_eb_s:   'M 100 276 L 580 276',
+    s_eb_r:   'M 100 300 L 290 300 Q 304 300 304 320 L 304 480',
+    s_eb_l_p: 'M 100 252 L 268 252 A 84 84 0 0 0 352 168 L 352 0',
+    s_wb_l:   'M 580 228 L 412 228 A 84 84 0 0 0 328 312 L 328 480',
+    s_wb_s:   'M 580 204 L 100 204',
+    s_wb_r:   'M 580 180 L 390 180 Q 376 180 376 160 L 376 0',
+    s_wb_l_p: 'M 580 228 L 412 228 A 84 84 0 0 0 328 312 L 328 480',
+
+    // SIGNALIZED scenario 1 only: TWO lanes per direction
+    t_nb_s: 'M 358 480 L 358 0',
+    t_nb_l: 'M 358 480 L 358 332 A 110 110 0 0 0 248 222 L 100 222',   
+    t_nb_r: 'M 394 480 L 394 294 A 36 36 0 0 1 430 258 L 580 258',   
+    t_sb_s: 'M 322 0 L 322 480',
+    t_sb_l: 'M 322 0 L 322 148 A 110 110 0 0 0 432 258 L 580 258',   
+    t_sb_r: 'M 286 0 L 286 186 A 36 36 0 0 1 250 222 L 100 222',       
+    t_eb_s: 'M 100 258 L 580 258',
+    t_eb_l: 'M 100 258 L 248 258 A 110 110 0 0 0 358 148 L 358 0',     
+    t_eb_r: 'M 100 294 L 286 294 A 36 36 0 0 1 322 330 L 322 480',     
+    t_wb_s: 'M 580 222 L 100 222',
+    t_wb_l: 'M 580 222 L 432 222 A 110 110 0 0 0 322 332 L 322 480', 
+    t_wb_r: 'M 580 186 L 394 186 A 36 36 0 0 1 358 150 L 358 0',     
+
+    // UNSIGNALIZED
+    r_nb_s: 'M 376 480 L 376 0',
+    r_sb_s: 'M 304 0 L 304 480',
+    r_eb_s: 'M 100 276 L 580 276',
+    r_wb_s: 'M 580 204 L 100 204',
+    r_nb_l: 'M 376 480 L 376 374 A 170 170 0 0 0 206 204 L 100 204',   
+    r_sb_l: 'M 304 0 L 304 106 A 170 170 0 0 0 474 276 L 580 276',   
+    r_eb_l: 'M 100 276 L 206 276 A 170 170 0 0 0 376 106 L 376 0',     
+    r_wb_l: 'M 580 204 L 474 204 A 170 170 0 0 0 304 374 L 304 480', 
+    r_nb_r: 'M 376 480 L 376 312 A 36 36 0 0 1 412 276 L 580 276',   
+    r_sb_r: 'M 304 0 L 304 168 A 36 36 0 0 1 268 204 L 100 204',       
+    r_eb_r: 'M 100 276 L 268 276 A 36 36 0 0 1 304 312 L 304 480',     
+    r_wb_r: 'M 580 204 L 412 204 A 36 36 0 0 1 376 168 L 376 0'      
+};
+
+const DB = {
+    1: {
+        scenarios: [
+            {
+                id: 1, title: '1 — Basic 2-phase', twoLane: true,
+                phases: [
+                    {
+                        id: 1, title: 'Ph1 — N-S green',
+                        text: 'Lights go green for N and S at the same time. Two lanes each way: the inner lane is straight-ahead and left, the outer lane is right turns only.<br><br>Everyone stops at the line first. On green, the straight and right-turning cars just go. The two left-turners cannot — nothing is holding back the traffic coming the other way, so they roll into the middle of the junction and wait there until it is clear. That wait is the yellow ring.<br><br>Right-turners also stop once more for anyone on the crossing they are turning into.',
+                        stages: [{
+                            signals: { nb:{m:'green'}, sb:{m:'green'}, eb:{m:'red'}, wb:{m:'red'} },
+                            peds: { e:'green', w:'green', n:'red', s:'red' }
+                        }],
+                        signals: { nb:{m:'green'}, sb:{m:'green'}, eb:{m:'red'}, wb:{m:'red'} },
+                        peds: { e:'green', w:'green', n:'red', s:'red' },
+                        paths: [
+                            { d: P.t_nb_s, c: 'var(--color-red)', anim: { stage:1, startAt: 0.0 } },
+                            { d: P.t_nb_r, c: 'var(--color-red)', anim: { stage:1, startAt: 0.6 } },
+                            { d: P.t_nb_l, c: 'var(--color-blue)', dash: true, anim: { stage:1, startAt: 0.4, creep: true, hold: 132, resumeAt: 3.4 } },
+                            { d: P.t_sb_s, c: 'var(--color-red)', anim: { stage:1, startAt: 0.2 } },
+                            { d: P.t_sb_r, c: 'var(--color-red)', anim: { stage:1, startAt: 0.8 } },
+                            { d: P.t_sb_l, c: 'var(--color-blue)', dash: true, anim: { stage:1, startAt: 0.6, creep: true, hold: 168, resumeAt: 4.0 } }
+                        ],
+                        markers: [
+                            { type: 'diamond', x: 422, y: 258 }, { type: 'diamond', x: 258, y: 222 },
+                            { type: 'conflict', x: 322, y: 251 }, { type: 'conflict', x: 358, y: 229 }
+                        ]
+                    },
+                    {
+                        id: 2, title: 'Ph2 — E-W green',
+                        text: 'Now it is E and W turning green, and the junction works in exactly the same way.<br><br>Straight and right-turning cars go on green. The left-turners pull into the middle and wait for a gap in the oncoming cars before finishing the turn. Right-turners stop for people on the crossing they exit into.',
+                        stages: [{
+                            signals: { nb:{m:'red'}, sb:{m:'red'}, eb:{m:'green'}, wb:{m:'green'} },
+                            peds: { e:'red', w:'red', n:'green', s:'green' }
+                        }],
+                        signals: { nb:{m:'red'}, sb:{m:'red'}, eb:{m:'green'}, wb:{m:'green'} },
+                        peds: { e:'red', w:'red', n:'green', s:'green' },
+                        paths: [
+                            { d: P.t_eb_s, c: 'var(--color-red)', anim: { stage:1, startAt: 0.0 } },
+                            { d: P.t_eb_r, c: 'var(--color-red)', anim: { stage:1, startAt: 0.6 } },
+                            { d: P.t_eb_l, c: 'var(--color-blue)', dash: true, anim: { stage:1, startAt: 0.4, creep: true, hold: 248, resumeAt: 3.4 } },
+                            { d: P.t_wb_s, c: 'var(--color-red)', anim: { stage:1, startAt: 0.2 } },
+                            { d: P.t_wb_r, c: 'var(--color-red)', anim: { stage:1, startAt: 0.8 } },
+                            { d: P.t_wb_l, c: 'var(--color-blue)', dash: true, anim: { stage:1, startAt: 0.6, creep: true, hold: 248, resumeAt: 4.0 } }
+                        ],
+                        markers: [
+                            { type: 'diamond', x: 322, y: 323 }, { type: 'diamond', x: 358, y: 157 },
+                            { type: 'conflict', x: 329, y: 222 }, { type: 'conflict', x: 351, y: 258 }
+                        ]
+                    }
+                ]
+            },
+            {
+                id: 2, title: '2 — Controlled left', arrows: 'l',
+                phases: [
+                    {
+                        id: 1, title: 'Ph1 — N-S: {{G}} then {{L}}',
+                        text: 'This junction has a separate green arrow for left turns, so one N-S phase runs in two steps.<br><br><b>Step 1 —</b> {{G}} Straight and right-turning cars cross. Right-turners still stop for people on the crossing they turn into.<br><b>Step 2 —</b> {{L}} The main light goes red and only the left-turners get a green arrow. Nothing is coming the other way now, so they turn without stopping in the middle at all.<br><br>E and W stay red the whole time.',
+                        stages: [
+                            { signals: { nb:{m:'green'}, sb:{m:'green'}, eb:{m:'red'}, wb:{m:'red'} },
+                              peds: { e:'green', w:'green', n:'red', s:'red' } },
+                            { signals: { nb:{m:'red',l:true}, sb:{m:'red',l:true}, eb:{m:'red'}, wb:{m:'red'} },
+                              peds: { e:'red', w:'red', n:'red', s:'red' } }
+                        ],
+                        paths: [
+                            { d: P.s_nb_s, c: 'var(--color-blue)', anim: { stage:1, startAt: 0.0 } },
+                            { d: P.s_nb_r, c: 'var(--color-blue)', anim: { stage:1, startAt: 0.5 } },
+                            { d: P.s_sb_s, c: 'var(--color-blue)', anim: { stage:1, startAt: 0.25 } },
+                            { d: P.s_sb_r, c: 'var(--color-blue)', anim: { stage:1, startAt: 0.75 } },
+                            { d: P.s_nb_l_p, c: 'var(--color-green)', anim: { stage:2, startAt: 0.0 } },
+                            { d: P.s_nb_l_p, c: 'var(--color-green)', ghost: true, anim: { stage:2, startAt: 0.2, join: true } },
+                            { d: P.s_sb_l_p, c: 'var(--color-green)', anim: { stage:2, startAt: 0.1 } },
+                            { d: P.s_sb_l_p, c: 'var(--color-green)', ghost: true, anim: { stage:2, startAt: 0.3, join: true } },
+                        ],
+                        markers: [ { type:'diamond',x:422,y:276 }, { type:'diamond',x:258,y:204 } ]
+                    },
+                    {
+                        id: 2, title: 'Ph2 — E-W: {{G}} then {{L}}',
+                        text: 'The same two steps on the other road.<br><br><b>Step 1 —</b> {{G}} for the E-W straight and right-turning cars.<br><b>Step 2 —</b> {{L}} for the two left-turners, who now have the junction to themselves.<br><br>N and S stay red throughout.',
+                        stages: [
+                            { signals: { nb:{m:'red'}, sb:{m:'red'}, eb:{m:'green'}, wb:{m:'green'} },
+                              peds: { e:'red', w:'red', n:'green', s:'green' } },
+                            { signals: { nb:{m:'red'}, sb:{m:'red'}, eb:{m:'red',l:true}, wb:{m:'red',l:true} },
+                              peds: { e:'red', w:'red', n:'red', s:'red' } }
+                        ],
+                        paths: [
+                            { d: P.s_eb_s, c: 'var(--color-blue)', anim: { stage:1, startAt: 0.0 } },
+                            { d: P.s_eb_r, c: 'var(--color-blue)', anim: { stage:1, startAt: 0.5 } },
+                            { d: P.s_wb_s, c: 'var(--color-blue)', anim: { stage:1, startAt: 0.25 } },
+                            { d: P.s_wb_r, c: 'var(--color-blue)', anim: { stage:1, startAt: 0.75 } },
+                            { d: P.s_eb_l_p, c: 'var(--color-green)', anim: { stage:2, startAt: 0.0 } },
+                            { d: P.s_eb_l_p, c: 'var(--color-green)', ghost: true, anim: { stage:2, startAt: 0.2, join: true } },
+                            { d: P.s_wb_l_p, c: 'var(--color-green)', anim: { stage:2, startAt: 0.1 } },
+                            { d: P.s_wb_l_p, c: 'var(--color-green)', ghost: true, anim: { stage:2, startAt: 0.3, join: true } },
+                        ],
+                        markers: [ { type:'diamond',x:304,y:323 }, { type:'diamond',x:376,y:157 } ]
+                    }
+                ]
+            },
+            {
+                id: 3, title: '3 — Controlled right', arrows: 'r',
+                phases: [
+                    {
+                        id: 1, title: 'Ph1 — N-S: {{G}} then {{R}}',
+                        text: 'Here the separate arrow is for right turns instead, so again two steps.<br><br><b>Step 1 —</b> {{G}} Straight-ahead cars cross. The left-turners have no arrow of their own, so they still roll into the middle and wait for a gap.<br><b>Step 2 —</b> {{R}} The main light goes red and the right-turners get their own green. Because that arrow is protected, the pedestrian lights stay red, so this time the right-turners do not stop for anyone.<br><br>E and W stay red throughout.',
+                        stages: [
+                            { signals: { nb:{m:'green'}, sb:{m:'green'}, eb:{m:'red'}, wb:{m:'red'} },
+                              peds: { e:'green', w:'green', n:'red', s:'red' } },
+                            { signals: { nb:{m:'red',r:true}, sb:{m:'red',r:true}, eb:{m:'red'}, wb:{m:'red'} },
+                              peds: { e:'red', w:'red', n:'red', s:'red' } }
+                        ],
+                        paths: [
+                            { d: P.s_nb_s, c: 'var(--color-red)', anim: { stage:1, startAt: 0.0 } },
+                            { d: P.s_nb_l, c: 'var(--color-blue)', dash: true, anim: { stage:1, startAt: 0.3, creep: true, hold: 132, resumeAt: 3.4 } },
+                            { d: P.s_sb_s, c: 'var(--color-red)', anim: { stage:1, startAt: 0.25 } },
+                            { d: P.s_sb_l, c: 'var(--color-blue)', dash: true, anim: { stage:1, startAt: 0.55, creep: true, hold: 168, resumeAt: 3.9 } },
+                            { d: P.s_nb_r, c: 'var(--color-green)', anim: { stage:2, startAt: 0.0 } },
+                            { d: P.s_nb_r, c: 'var(--color-green)', ghost: true, anim: { stage:2, startAt: 0.2, join: true } },
+                            { d: P.s_sb_r, c: 'var(--color-green)', anim: { stage:2, startAt: 0.1 } },
+                            { d: P.s_sb_r, c: 'var(--color-green)', ghost: true, anim: { stage:2, startAt: 0.3, join: true } },
+                        ],
+                        markers: [ { type:'conflict',x:304,y:236 }, { type:'conflict',x:376,y:244 },
+                                   { type:'diamond',x:422,y:276 }, { type:'diamond',x:258,y:204 } ]
+                    },
+                    {
+                        id: 2, title: 'Ph2 — E-W: {{G}} then {{R}}',
+                        text: 'The same two steps on the E-W road.<br><br><b>Step 1 —</b> {{G}} for the straight-ahead cars, while the left-turners wait in the middle for a gap.<br><b>Step 2 —</b> {{R}} for the right-turners, with the pedestrian lights held on red so their path is completely clear.<br><br>N and S stay red throughout.',
+                        stages: [
+                            { signals: { nb:{m:'red'}, sb:{m:'red'}, eb:{m:'green'}, wb:{m:'green'} },
+                              peds: { e:'red', w:'red', n:'green', s:'green' } },
+                            { signals: { nb:{m:'red'}, sb:{m:'red'}, eb:{m:'red',r:true}, wb:{m:'red',r:true} },
+                              peds: { e:'red', w:'red', n:'red', s:'red' } }
+                        ],
+                        paths: [
+                            { d: P.s_eb_s, c: 'var(--color-red)', anim: { stage:1, startAt: 0.0 } },
+                            { d: P.s_eb_l, c: 'var(--color-blue)', dash: true, anim: { stage:1, startAt: 0.3, creep: true, hold: 250, resumeAt: 3.4 } },
+                            { d: P.s_wb_s, c: 'var(--color-red)', anim: { stage:1, startAt: 0.25 } },
+                            { d: P.s_wb_l, c: 'var(--color-blue)', dash: true, anim: { stage:1, startAt: 0.55, creep: true, hold: 250, resumeAt: 3.9 } },
+                            { d: P.s_eb_r, c: 'var(--color-green)', anim: { stage:2, startAt: 0.0 } },
+                            { d: P.s_eb_r, c: 'var(--color-green)', ghost: true, anim: { stage:2, startAt: 0.2, join: true } },
+                            { d: P.s_wb_r, c: 'var(--color-green)', anim: { stage:2, startAt: 0.1 } },
+                            { d: P.s_wb_r, c: 'var(--color-green)', ghost: true, anim: { stage:2, startAt: 0.3, join: true } },
+                        ],
+                        markers: [ { type:'conflict',x:344,y:204 }, { type:'conflict',x:336,y:276 },
+                                   { type:'diamond',x:304,y:323 }, { type:'diamond',x:376,y:157 } ]
+                    }
+                ]
+            },
+            {
+                id: 4, title: '4 — Controlled L+R', arrows: 'lr',
+                phases: [
+                    {
+                        id: 1, title: 'Ph1 — N-S: {{L}} then {{G}} then {{R}}',
+                        text: 'Every movement gets its own arrow here, so nobody ever has to guess. One N-S phase runs in three steps.<br><br><b>Step 1 —</b> {{L}} Both left-turners go first, on their own.<br><b>Step 2 —</b> {{G}} The straight-ahead cars cross, and the E and W crossings open for people on foot.<br><b>Step 3 —</b> {{R}} The right-turners go last, still stopping for anyone on the crossing they turn into.<br><br>E and W are red for all three steps. No car ever has to wait in the middle of the junction in this one.',
+                        stages: [
+                            { signals: { nb:{m:'red',l:true}, sb:{m:'red',l:true}, eb:{m:'red'}, wb:{m:'red'} },
+                              peds: { e:'red', w:'red', n:'red', s:'red' } },
+                            { signals: { nb:{m:'green'}, sb:{m:'green'}, eb:{m:'red'}, wb:{m:'red'} },
+                              peds: { e:'green', w:'green', n:'red', s:'red' } },
+                            { signals: { nb:{m:'red',r:true}, sb:{m:'red',r:true}, eb:{m:'red'}, wb:{m:'red'} },
+                              peds: { e:'red', w:'red', n:'red', s:'red' } }
+                        ],
+                        paths: [
+                            { d: P.s_nb_l_p, c: 'var(--color-green)', anim: { stage:1, startAt: 0.0 } },
+                            { d: P.s_sb_l_p, c: 'var(--color-green)', anim: { stage:1, startAt: 0.25 } },
+                            { d: P.s_nb_s, c: 'var(--color-red)', anim: { stage:2, startAt: 0.0 } },
+                            { d: P.s_nb_s, c: 'var(--color-red)', ghost: true, anim: { stage:2, startAt: 0.2, join: true } },
+                            { d: P.s_sb_s, c: 'var(--color-red)', anim: { stage:2, startAt: 0.1 } },
+                            { d: P.s_sb_s, c: 'var(--color-red)', ghost: true, anim: { stage:2, startAt: 0.3, join: true } },
+                            { d: P.s_nb_r, c: 'var(--color-blue)', anim: { stage:3, startAt: 0.0 } },
+                            { d: P.s_nb_r, c: 'var(--color-blue)', ghost: true, anim: { stage:3, startAt: 0.2, join: true } },
+                            { d: P.s_sb_r, c: 'var(--color-blue)', ghost: false, anim: { stage:3, startAt: 0.1 } },
+                            { d: P.s_sb_r, c: 'var(--color-blue)', ghost: true, anim: { stage:3, startAt: 0.3, join: true } },
+                        ],
+                        markers: [ { type:'diamond',x:422,y:276 }, { type:'diamond',x:258,y:204 } ]
+                    },
+                    {
+                        id: 2, title: 'Ph2 — E-W: {{L}} then {{G}} then {{R}}',
+                        text: 'The same three steps on the E-W road: {{L}} left turns first on their own arrow, then {{G}} straight ahead on the main green, then {{R}} right turns on their own arrow, with a stop for people on the crossing.<br><br>N and S wait on red throughout.',
+                        stages: [
+                            { signals: { nb:{m:'red'}, sb:{m:'red'}, eb:{m:'red',l:true}, wb:{m:'red',l:true} },
+                              peds: { e:'red', w:'red', n:'red', s:'red' } },
+                            { signals: { nb:{m:'red'}, sb:{m:'red'}, eb:{m:'green'}, wb:{m:'green'} },
+                              peds: { e:'red', w:'red', n:'green', s:'green' } },
+                            { signals: { nb:{m:'red'}, sb:{m:'red'}, eb:{m:'red',r:true}, wb:{m:'red',r:true} },
+                              peds: { e:'red', w:'red', n:'red', s:'red' } }
+                        ],
+                        paths: [
+                            { d: P.s_eb_l_p, c: 'var(--color-green)', anim: { stage:1, startAt: 0.0 } },
+                            { d: P.s_wb_l_p, c: 'var(--color-green)', anim: { stage:1, startAt: 0.25 } },
+                            { d: P.s_eb_s, c: 'var(--color-red)', anim: { stage:2, startAt: 0.0 } },
+                            { d: P.s_eb_s, c: 'var(--color-red)', ghost: true, anim: { stage:2, startAt: 0.2, join: true } },
+                            { d: P.s_wb_s, c: 'var(--color-red)', anim: { stage:2, startAt: 0.1 } },
+                            { d: P.s_wb_s, c: 'var(--color-red)', ghost: true, anim: { stage:2, startAt: 0.3, join: true } },
+                            { d: P.s_eb_r, c: 'var(--color-blue)', anim: { stage:3, startAt: 0.0 } },
+                            { d: P.s_eb_r, c: 'var(--color-blue)', ghost: true, anim: { stage:3, startAt: 0.2, join: true } },
+                            { d: P.s_wb_r, c: 'var(--color-blue)', anim: { stage:3, startAt: 0.1 } },
+                            { d: P.s_wb_r, c: 'var(--color-blue)', ghost: true, anim: { stage:3, startAt: 0.3, join: true } },
+                        ],
+                        markers: [ { type:'diamond',x:304,y:323 }, { type:'diamond',x:376,y:157 } ]
+                    }
+                ]
+            }
+        ]
+    },
+    2: {
+        scenarios: [
+            {
+                id: 5, title: '5 — Priority E-W + Yield N-S',
+                signs: { eb:'prio', wb:'prio', nb:'yield', sb:'yield' },
+                isSingleLane: true,
+                phases: [
+                    {
+                        id: 1, title: 'Ph1 — Priority Straight + Right',
+                        text: 'No lights here. A sign decides instead: E and W are the priority road, N and S have to give way.<br><br>These cars are all on the priority road and are going straight on or turning right, so nothing can get in their way. They do not slow down and they do not look for a gap — they simply drive through.<br><br>Anyone waiting on the N or S arm has to let all of them past first.',
+                        paths: [
+                            { d: P.r_eb_s, c: 'var(--color-blue)', label: '1st', anim: { startAt: 0.0, tag: 'W→E' } },
+                            { d: P.r_eb_r, c: 'var(--color-blue)', anim: { startAt: 0.4, tag: 'W→S' } },
+                            { d: P.r_wb_s, c: 'var(--color-blue)', label: '1st', anim: { startAt: 0.8, tag: 'E→W' } },
+                            { d: P.r_wb_r, c: 'var(--color-blue)', anim: { startAt: 1.2, tag: 'E→N' } },
+                            { d: P.r_eb_l, c: 'var(--color-blue)', ghost: true, chance: 0.55, anim: { startAt: 1.6, creep: true, hold: 206, resumeAt: 4.0 } },
+                            { d: P.r_eb_s, c: 'var(--color-blue)', ghost: true, chance: 0.5, anim: { startAt: 2.1 } },
+                            { d: P.r_wb_l, c: 'var(--color-blue)', ghost: true, chance: 0.55, anim: { startAt: 1.8, creep: true, hold: 206, resumeAt: 4.4 } },
+                            { d: P.r_wb_s, c: 'var(--color-blue)', ghost: true, chance: 0.5, anim: { startAt: 2.3 } },
+                        ], markers: []
+                    },
+                    {
+                        id: 2, title: 'Ph2 — Priority Left Turn',
+                        text: 'Being on the priority road does not help you turn left.<br><br>Our car is coming from the west and wants to turn left to the north (W→N). The sign protects it from the side roads, but not from the traffic coming straight at it: E→W going straight on, and E→N turning right into the same lane our car wants.<br><br>So it edges out, waits for both of them, and only then completes the turn.',
+                        paths: [
+                            { d: P.r_wb_s, c: 'var(--color-red)', anim: { startAt: 0.0, tag: 'E→W' } },
+                            { d: P.r_wb_r, c: 'var(--color-red)', anim: { startAt: 0.5, tag: 'E→N' } },
+                            { d: P.r_eb_l, c: 'var(--color-blue)', dash: true, label: 'after gap', anim: { startAt: 0.2, creep: true, hold: 206, resumeAt: 3.0, tag: 'W→N' } },
+                        ], markers: [ { type:'conflict',x:345,y:204 }, { type:'conflict',x:376,y:150 } ]
+                    },
+                    {
+                        id: 3, title: 'Ph3 — Yield Road Straight (S→N)',
+                        text: 'Now we are on the arm with the give-way sign, coming from the south and heading straight on to the north.<br><br>Crossing a priority road means waiting for every car on it, from both directions. Our car has to let all of them past — the ones crossing in front of it, and the ones turning into the very lane it wants to join.<br><br>Only when the whole road is empty does it go.',
+                        paths: [
+                            { d: P.r_nb_s, c: 'var(--color-blue)', dash: true, label: 'YIELDS', anim: { hold: 132, resumeAt: 4.0, tag: 'S→N' } },
+                            { d: P.r_eb_s, c: 'var(--color-red)', anim: { startAt: 0.0, tag: 'W→E' } },
+                            { d: P.r_wb_s, c: 'var(--color-red)', anim: { startAt: 0.4, tag: 'E→W' } },
+                            { d: P.r_wb_l, c: 'var(--color-red)', anim: { startAt: 0.8, creep: true, hold: 1, resumeAt: 3.2, tag: 'E→S' } },
+                            { d: P.r_wb_r, c: 'var(--color-red)', anim: { startAt: 1.2, tag: 'E→N' } },
+                            { d: P.r_eb_l, c: 'var(--color-red)', anim: { startAt: 1.6, creep: true, hold: 1, resumeAt: 3.0, tag: 'W→N' } },
+                        ], markers: [ { type:'conflict',x:376,y:276 }, { type:'conflict',x:376,y:235 }, { type:'conflict',x:376,y:204 }, { type:'conflict',x:376,y:168 }, { type:'conflict',x:376,y:126 } ]
+                    },
+                    {
+                        id: 4, title: 'Ph4 — Yield Road Right (S→E)',
+                        text: 'Turning right off the give-way arm is the easiest move at this junction, but it is still not free.<br><br>Our car comes from the south and turns right to the east. It is not crossing the priority road, only joining it — but it is joining the same lane the W→E car is already using. So it waits for that car, then slots in behind it.',
+                        paths: [
+                            { d: P.r_eb_s, c: 'var(--color-red)', label: '1st', anim: { startAt: 0.0, tag: 'W→E' } },
+                            { d: P.r_nb_r, c: 'var(--color-blue)', dash: true, label: 'YIELDS', anim: { startAt: 0.2, hold: 132, resumeAt: 2.8, tag: 'S→E' } },
+                        ], markers: [ { type:'conflict',x:412,y:276 } ]
+                    },
+                    {
+                        id: 5, title: 'Ph5 — Yield Road Left (S→W) — LAST',
+                        text: 'This is the hardest move at the junction, and our car goes last of everyone.<br><br>Coming from the south and turning left to the west, it has to give way twice over:<br><b>1.</b> To the whole priority road, both directions.<br><b>2.</b> To the cars coming from the north — they are on a give-way arm too, but they are coming straight at us, and one of them is turning into the same westbound lane we want.<br><br>Everybody else clears the junction before our car moves.',
+                        paths: [
+                            { d: P.r_nb_l, c: 'var(--color-blue)', dash: true, label: 'LAST', anim: { creep: true, hold: 132, resumeAt: 6.0, tag: 'S→W' } },
+                            { d: P.r_eb_s, c: 'var(--color-red)', label: '1st', anim: { startAt: 0.0, tag: 'W→E' } },
+                            { d: P.r_wb_s, c: 'var(--color-red)', label: '1st', anim: { startAt: 0.3, tag: 'E→W' } },
+                            { d: P.r_wb_l, c: 'var(--color-red)', anim: { startAt: 0.6, creep: true, hold: 1, resumeAt: 3.2, tag: 'E→S' } },
+                            { d: P.r_eb_l, c: 'var(--color-red)', anim: { startAt: 0.9, creep: true, hold: 1, resumeAt: 3.0, tag: 'W→N' } },
+                            { d: P.r_sb_s, c: 'var(--color-red)', dash: true, label: '2nd', anim: { hold: 168, resumeAt: 3.8, tag: 'N→S' } },
+                            { d: P.r_sb_r, c: 'var(--color-red)', dash: true, label: '2nd', at: 0.55, anim: { startAt: 1.1, hold: 132, resumeAt: 5.2, tag: 'N→W' } }
+                        ], markers: [ { type:'conflict',x:345,y:276 }, { type:'conflict',x:340,y:269 }, { type:'conflict',x:311,y:240 }, { type:'conflict',x:304,y:235 }, { type:'conflict',x:240,y:204 } ]
+                    }
+                ]
+            },
+            {
+                id: 6, title: '6 — Right-before-left',
+                signs: { eb:'none', wb:'none', nb:'none', sb:'none' },
+                isSingleLane: true,
+                phases: [
+                    {
+                        id: 1, title: 'Ph1 — S→N yields to traffic from the right',
+                        text: 'No signs and no lights at all. The rule is <b>right before left</b>: you give way to whoever is on your right.<br><br>Our car comes from the south heading north. Sitting at that line, everything arriving from the east is on its right — so all of it goes first, whichever way those cars are turning.<br><br>Our car waits for the east arm to empty, then goes.',
+                        paths: [
+                            { d: P.r_nb_s, c: 'var(--color-blue)', dash: true, label: 'YIELDS', anim: { hold: 132, resumeAt: 3.8, tag: 'S→N' } },
+                            { d: P.r_wb_s, c: 'var(--color-red)', label: '1st', anim: { startAt: 0.0, tag: 'E→W' } },
+                            { d: P.r_wb_r, c: 'var(--color-red)', anim: { startAt: 0.4, tag: 'E→N' } },
+                            { d: P.r_wb_l, c: 'var(--color-red)', anim: { startAt: 0.8, creep: true, hold: 1, resumeAt: 3.2, tag: 'E→S' } }
+                        ], markers: [ { type:'conflict',x:376,y:235 }, { type:'conflict',x:376,y:204 }, { type:'conflict',x:376,y:168 } ]
+                    },
+                    {
+                        id: 2, title: 'Ph2 — Right turns: nobody yields',
+                        text: 'A right-turner from each of the four arms at the same moment.<br><br>Each one only has to swing into the nearest corner. No path crosses another, and none of them joins a lane someone else is using. There is simply nothing to give way to, so all four move off together.<br><br>Right before left never even comes up here.',
+                        paths: [
+                            { d: P.r_nb_r, c: 'var(--color-blue)', anim: { startAt: 0.0, tag: 'S→E' } },
+                            { d: P.r_sb_r, c: 'var(--color-blue)', anim: { startAt: 0.2, tag: 'N→W' } },
+                            { d: P.r_eb_r, c: 'var(--color-blue)', anim: { startAt: 0.4, tag: 'W→S' } },
+                            { d: P.r_wb_r, c: 'var(--color-blue)', anim: { startAt: 0.6, tag: 'E→N' } }
+                        ], markers: []
+                    },
+                    {
+                        id: 3, title: 'Ph3 — S→W left turn goes LAST',
+                        text: 'Turning left with no signs and no lights means giving way to almost everyone.<br><br>Our car comes from the south and wants to turn left to the west. It has to wait for the cars on its right (from the east) and for the cars coming straight at it (from the north) — including one that is turning into the same westbound lane.<br><br>Among those cars, the ones from the north have nobody on their right, so they go first; the ones from the east go next. Our car goes last of all four.',
+                        paths: [
+                            { d: P.r_nb_l, c: 'var(--color-blue)', dash: true, label: 'LAST', anim: { hold: 132, resumeAt: 6.4, afterAll: true, tag: 'S→W' } },
+                            { d: P.r_sb_s, c: 'var(--color-red)', label: '1st', anim: { startAt: 0.0, tag: 'N→S' } },
+                            { d: P.r_sb_r, c: 'var(--color-red)', at: 0.55, anim: { startAt: 1.2, tag: 'N→W' } },
+                            { d: P.r_wb_s, c: 'var(--color-red)', label: '2nd', anim: { hold: 268, resumeAt: 3.0, tag: 'E→W' } },
+                            { d: P.r_wb_l, c: 'var(--color-red)', anim: { startAt: 0.5, hold: 226, resumeAt: 3.6, tag: 'E→S' } }
+                        ], markers: [ { type:'conflict',x:340,y:269 }, { type:'conflict',x:304,y:235 }, { type:'conflict',x:240,y:204 } ]
+                    }
+                ]
+            }
+        ]
+    }
+};
+
+function switchTab(t) {
+    currentTab = t; currentScen = DB[t].scenarios[0].id;
+    currentPhase = DB[t].scenarios[0].phases[0].id;
+    document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active',(i+1)===t));
+    renderUI();
+}
+function setScenario(sId) {
+    currentScen = sId;
+    currentPhase = DB[currentTab].scenarios.find(s=>s.id===sId).phases[0].id;
+    renderUI();
+}
+function setPhase(pId) { currentPhase = pId; renderUI(); }
+
+let CURRENT_PHASE = null;
+
+const GLYPH_ARROW_L = 'M 4.3 9.6 L 10.1 5.3 L 10.1 7.9 L 14.9 7.9 L 14.9 11.3 L 10.1 11.3 L 10.1 13.9 Z';
+const GLYPH_ARROW_R = 'M 14.9 9.6 L 9.1 5.3 L 9.1 7.9 L 4.3 7.9 L 4.3 11.3 L 9.1 11.3 L 9.1 13.9 Z';
+function sigGlyph(kind) {
+    const body = kind === 'G'
+        ? '<circle cx="9.6" cy="9.6" r="5.8" fill="#25e025"/>'
+        : `<path d="${kind === 'L' ? GLYPH_ARROW_L : GLYPH_ARROW_R}" fill="#25e025"/>`;
+    return `<svg class="glyph" width="20" height="20" viewBox="0 0 19.2 19.2">
+        <rect x="0.5" y="0.5" width="18.2" height="18.2" rx="4" fill="#15181e"
+              stroke="#5a6472" stroke-width="1"/>${body}</svg>`;
+}
+function withGlyphs(txt) {
+    return (txt || '').replace(/\{\{([GLR])\}\}/g, (_, k) => sigGlyph(k));
+}
+
+function renderUI() {
+    const sData = DB[currentTab].scenarios;
+    const scenObj = sData.find(s=>s.id===currentScen);
+    const phaseObj = scenObj.phases.find(p=>p.id===currentPhase);
+    CURRENT_PHASE = phaseObj;
+
+    let html = '<div class="control-row">';
+    sData.forEach(s => { html += `<button class="btn ${s.id===currentScen?'active':''}" onclick="setScenario(${s.id})">${s.title}</button>`; });
+    html += '</div><div class="control-row">';
+    scenObj.phases.forEach(p => { html += `<button class="btn ${p.id===currentPhase?'active':''}" onclick="setPhase(${p.id})">${withGlyphs(p.title)}</button>`; });
+    html += '</div>';
+    document.getElementById('controls').innerHTML = html;
+    document.getElementById('info-box').innerHTML = `<strong>${withGlyphs(phaseObj.title)}</strong><br/>${withGlyphs(phaseObj.text)}`;
+    renderSVG(scenObj, phaseObj);
+    renderAnimBar(phaseObj);
+    renderLegend(scenObj, phaseObj);
+}
+
+function drawZPlate(layer, x, y, size, z, rot) {
+    const S = size, h = S / 2;
+    const EDGE = { N:[h,0], S:[h,S], W:[0,h], E:[S,h] };
+    const g = el('g', { transform: `translate(${x},${y})` });
+    g.appendChild(el('rect', { x:0, y:0, width:S, height:S, rx:S*0.09, fill:'#ffffff', stroke:'#111', 'stroke-width':S*0.055 }));
+    const inner = el('g', { transform:`rotate(${rot || 0}, ${h}, ${h})` });
+    const a = EDGE[z.prio[0]], b = EDGE[z.prio[1]];
+    inner.appendChild(el('path', { d:`M ${a[0]} ${a[1]} L ${h} ${h} L ${b[0]} ${b[1]}`, fill:'none', stroke:'#111', 'stroke-width':S*0.21, 'stroke-linejoin':'round' }));
+    z.minors.forEach(m => {
+        const e = EDGE[m];
+        const ux = (h - e[0]), uy = (h - e[1]), n = Math.hypot(ux, uy) || 1;
+        inner.appendChild(el('path', { d:`M ${e[0]} ${e[1]} L ${e[0] + ux/n*S*0.24} ${e[1] + uy/n*S*0.24}`, stroke:'#111', 'stroke-width':S*0.105, fill:'none' }));
+    });
+    g.appendChild(inner);
+    layer.appendChild(g);
+}
+
+const HEX = { red:'#d32f2f', blue:'#1976d2', green:'#388e3c', orange:'#f57c00' };
+
+const LINE_KEY = {
+    1: { 'red|solid':  'Goes the moment the light turns green',
+         'blue|dash':  'Turning across traffic — must wait for a gap' },
+    2: { 'blue|solid': 'Goes on the main green',
+         'green|solid':'Protected left turn — gets its own green arrow' },
+    3: { 'red|solid':  'Goes on the main green',
+         'blue|dash':  'Turning across traffic — must wait for a gap',
+         'green|solid':'Protected right turn — gets its own green arrow' },
+    4: { 'green|solid':'Protected left turn — own arrow, goes first',
+         'red|solid':  'Straight ahead on the main green',
+         'blue|solid': 'Protected right turn — own arrow, goes last' },
+    5: { 'blue|solid': 'On the priority road — drives straight through',
+         'blue|dash':  'Must wait for a gap before going',
+         'red|solid':  'Has priority — goes before our car',
+         'red|dash':   'Also has to wait, but still goes before our car' },
+    7: { 'blue|solid': 'On the priority road — keeps right of way round the bend',
+         'blue|dash':  'On a give-way approach — waits for the priority road',
+         'red|solid':  'On the priority road — goes before our car',
+         'red|dash':   'On a give-way approach — goes once the priority road is clear',
+         'orange|dash':'Last out — gives way to the priority road and to the approach on its right' },
+    8: { 'blue|solid': 'On the priority road — keeps right of way round the bend',
+         'blue|dash':  'On a give-way approach — waits for the priority road',
+         'red|solid':  'On the priority road — goes before our car',
+         'orange|dash':'Last out — the give-way approach, once the priority road is clear' },
+    6: { 'blue|solid': 'Clear to go — nothing in its way',
+         'blue|dash':  'Must give way to the traffic on its right',
+         'red|solid':  'Goes before our car' }
+};
+
+function carChip(color, mode) {
+    const ring = mode === 'ego' ? `<circle cx="0" cy="0" r="11.5" fill="none" stroke="#fff" stroke-width="3.2" opacity="0.9"/><circle cx="0" cy="0" r="11.5" fill="none" stroke="${EGO_COLOR}" stroke-width="1.9" stroke-dasharray="3.8,2.7"/>` : '';
+    const halo = mode === 'wait' ? `<circle cx="0" cy="0" r="11.5" fill="#ffd54f" opacity="0.16"/><circle cx="0" cy="0" r="11.5" fill="none" stroke="#ffd54f" stroke-width="2.2"/>` : '';
+    return `<svg width="34" height="34" viewBox="-15 -15 30 30">${halo}${ring}
+      <g transform="rotate(-90) scale(0.6)">
+        <rect x="-7" y="-8.5" width="9" height="3" rx="1.2" fill="#1a1a1a"/>
+        <rect x="-7" y="5.5" width="9" height="3" rx="1.2" fill="#1a1a1a"/>
+        <rect x="5" y="-8.5" width="9" height="3" rx="1.2" fill="#1a1a1a"/>
+        <rect x="5" y="5.5" width="9" height="3" rx="1.2" fill="#1a1a1a"/>
+        <rect x="-14" y="-7" width="28" height="14" rx="5" fill="${color}" stroke="#fff" stroke-width="1.4"/>
+        <path d="M 1 -5.6 L 7.5 -3.4 L 7.5 3.4 L 1 5.6 Z" fill="#dbeafe" opacity="0.92"/>
+        <rect x="-8.5" y="-5" width="5" height="10" rx="1.5" fill="#dbeafe" opacity="0.75"/>
+      </g></svg>`;
+}
+
+const PED_CHIP = `<svg width="34" height="26" viewBox="0 0 34 26"><rect x="0" y="0" width="34" height="26" rx="3" fill="#434a55"/><rect x="3" y="3" width="4" height="20" fill="#fff"/><rect x="9" y="3" width="4" height="20" fill="#fff"/><rect x="15" y="3" width="4" height="20" fill="#fff"/><circle cx="26" cy="13" r="6.5" fill="#4caf50"/><text x="26" y="16.5" font-size="9" font-weight="bold" fill="#fff" text-anchor="middle">P</text></svg>`;
+
+function item(icon, label) {
+    return `<div class="l-item">${icon}<span>${label}</span></div>`;
+}
+
+function renderLegend(scen, phase) {
+    const box = document.getElementById('legend');
+    const out = [];
+    const cars = (animState && animState.vehicles) ? animState.vehicles : [];
+    
+    out.push(item(carChip(HEX.blue, 'ego'), '<b>Ego vehicle</b> — the car (or pair of cars) this phase follows'));
+    const others = {};
+    cars.forEach(v => { if (!v.ego) others[v.color] = (others[v.color] || 0) + 1; });
+    const common = Object.keys(others).sort((a, b) => others[b] - others[a])[0];
+    if (common) out.push(item(carChip(common, ''), '<b>Other traffic</b> — the cars we have to fit in around'));
+
+    if (cars.some(v => v.turn)) out.push(item('<svg width="30" height="30" viewBox="-15 -15 30 30"><g transform="rotate(-90) scale(0.6)"><rect x="-14" y="-7" width="28" height="14" rx="5" fill="' + HEX.blue + '" stroke="#fff" stroke-width="1.4"/><circle cx="12" cy="-6" r="5.2" fill="#ffb300" opacity="0.3"/><circle cx="12" cy="-6" r="2.7" fill="#ffc62e"/><circle cx="-12" cy="-6" r="5.2" fill="#ffb300" opacity="0.3"/><circle cx="-12" cy="-6" r="2.7" fill="#ffc62e"/></g></svg>', '<b>Indicator</b> \u2014 on before the turn and off once it is finished.'));
+
+    const waits = cars.some(v => (v.plan || []).some(st => st.kind && st.kind !== 'signal'));
+    if (waits) out.push(item(carChip(HEX.blue, 'wait'), '<b>Yellow ring</b> — this car is stopped, giving way to traffic or to people crossing'));
+
+    if (currentTab === 1 && (phase.peds || phase.stages)) out.push(item(PED_CHIP, '<b>Pedestrian crossing</b> — a green P means people are crossing, so turning cars wait'));
+
+    const seen = [];
+    (phase.paths || []).forEach(p => {
+        if (p.ghost || p.type === 'stopbar' || !p.c) return;
+        const name = p.c.replace('var(--color-', '').replace(')', '');
+        const k = name + (p.dash ? '|dash' : '|solid');
+        if (seen.indexOf(k) < 0) seen.push(k);
+    });
+    seen.forEach(k => {
+        const label = (LINE_KEY[scen.id] || {})[k];
+        if (!label) return;
+        const name = k.split('|')[0], dash = k.indexOf('dash') > 0;
+        const sw = dash ? `<div class="l-dash" style="border-color:${HEX[name]}"></div>` : `<div class="l-line" style="background:${HEX[name]}"></div>`;
+        out.push(item(sw, label));
+    });
+
+    const marks = (phase.markers || []).map(m => m.type);
+    if (marks.indexOf('diamond') >= 0) out.push(item('<svg width="16" height="16"><polygon points="8,1 15,8 8,15 1,8" fill="orange" stroke="white" stroke-width="1"/></svg>', 'Where a turning car stops for people on the crossing'));
+    if (marks.indexOf('conflict') >= 0) out.push(item('<svg width="14" height="14"><circle cx="7" cy="7" r="5.5" fill="red"/></svg>', 'Conflict point — two paths cross right here'));
+
+    const sset = phase.signs || scen.signs;
+    const signs = sset ? Object.keys(sset).map(k => sset[k]) : [];
+    if (signs.indexOf('prio') >= 0) out.push(item('<svg class="l-sign" viewBox="0 0 20 20"><polygon points="10,0 20,10 10,20 0,10" fill="yellow" stroke="white" stroke-width="2"/></svg>', '<b>Priority road</b> — this approach does not give way'));
+    if (signs.indexOf('yield') >= 0) out.push(item('<svg class="l-sign" viewBox="0 0 20 20"><polygon points="0,0 20,0 10,18" fill="white" stroke="red" stroke-width="3"/></svg>', '<b>Give way</b> — this approach waits for the priority road'));
+    if (phase.z) {
+        const sv = document.createElementNS('http://www.w3.org/2000/svg','svg');
+        sv.setAttribute('width','30'); sv.setAttribute('height','30'); sv.setAttribute('viewBox','0 0 28 28');
+        drawZPlate(sv, 0, 0, 28, phase.z, 0);
+        out.push(item(sv.outerHTML, '<b>DE ' + phase.z.n + '</b> — the plate under the sign, drawing which way the priority road runs through this junction'));
+    }
+    if (currentTab === 2 && signs.length && signs.every(x => x === 'none')) out.push(item('<svg width="18" height="18" viewBox="0 0 18 18"><path d="M3 9 h9 M9 4 l5 5 l-5 5" stroke="#1976d2" stroke-width="2.4" fill="none" stroke-linecap="round"/></svg>', '<b>No signs at all</b> — right before left decides who goes'));
+
+    // Check if any ego vehicle is currently drawing a yield line in this phase
+    const hasYieldLine = (animState && animState.vehicles) ? 
+        animState.vehicles.some(v => v.ego && !v.follower && (!v.yieldIx || v.yieldIx === 0) && v.stops.some(st => st.kind === 'yield')) 
+        : false;
+
+    if (hasYieldLine) {
+        out.push(item('<svg width="24" height="24" viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12" stroke="#19b5ff" stroke-width="2.5"/><circle cx="3" cy="12" r="2.5" fill="#19b5ff"/><circle cx="21" cy="12" r="2.5" fill="#19b5ff"/></svg>', '<b>Yield line</b> — exactly where the ego vehicle waits before proceeding'));
+    }
+
+    box.innerHTML = out.join('');
+}
+
+function el(tag, attrs) {
+    const e = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    for (let k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+}
+
+function arrowGlyph(cx, cy, r, dir) {
+    const s = r * 0.95, t = s * 0.1;
+    return `M ${cx + dir * s} ${cy} L ${cx - dir * t} ${cy - s * 0.8} L ${cx - dir * t} ${cy - s * 0.32} L ${cx - dir * s} ${cy - s * 0.32} L ${cx - dir * s} ${cy + s * 0.32} L ${cx - dir * t} ${cy + s * 0.32} L ${cx - dir * t} ${cy + s * 0.8} Z`;
+}
+
+const LAMP_ON = { red: '#ff2b2b', amber: '#ffc107', green: '#25e025' };
+const LAMP_OFF = '#2a2a2a';
+
+function drawArrowHead(layer, x, y, dir, state) {
+    layer.appendChild(el('rect', { x: x, y: y, width: 26, height: 70, fill: 'black', rx: 4 }));
+    const lamps = {};
+    [['red', 15], ['amber', 35], ['green', 55]].forEach(([name, dy]) => {
+        layer.appendChild(el('circle', { cx: x + 13, cy: y + dy, r: 9, fill: '#141414' }));
+        const glyph = el('path', { d: arrowGlyph(x + 13, y + dy, 7.5, dir), fill: state === name ? LAMP_ON[name] : LAMP_OFF });
+        layer.appendChild(glyph);
+        lamps[name] = glyph;
+    });
+    return lamps;
+}
+
+function wantsGreen(sig, kind) {
+    if (!sig) return false;
+    return kind === 'main' ? sig.m === 'green' : (kind === 'l' ? !!sig.l : !!sig.r);
+}
+
+function stageAt(t, greens, ends) {
+    for (let i = 0; i < greens.length; i++) if (t >= greens[i] && (!ends || t < ends[i])) return i;
+    return -1;
+}
+
+function aspectFor(phase, dir, kind, t, greens, ends) {
+    for (let i = 0; i < greens.length; i++) {
+        if (!wantsGreen(stageOf(phase, i).signals[dir], kind)) continue;
+        const end = ends[i] !== undefined ? ends[i] : greens[i];
+        if (t >= greens[i] && t < end) return 'green';
+        if (t >= greens[i] - AMBER_LEAD && t < greens[i]) return 'amber';
+        if (t >= end && t < end + AMBER_OUT) return 'amber';
+    }
+    return 'red';
+}
+
+function updateSignals(t, greens, ends) {
+    const phase = SIGNAL_REFS.phase;
+    if (!phase) return;
+    const k = stageAt(t, greens, ends);
+    ['nb','sb','eb','wb'].forEach(dir => {
+        const r = SIGNAL_REFS[dir]; if (!r) return;
+        const main = aspectFor(phase, dir, 'main', t, greens, ends);
+        r.red.setAttribute('fill',   main === 'red'   ? '#ff0000' : '#330000');
+        r.amber.setAttribute('fill', main === 'amber' ? LAMP_ON.amber : '#332600');
+        r.green.setAttribute('fill', main === 'green' ? '#00ff00' : '#003300');
+        [['l', r.arrowL], ['r', r.arrowR]].forEach(([kind, lamps]) => {
+            if (!lamps) return;
+            const st = aspectFor(phase, dir, kind, t, greens, ends);
+            ['red','amber','green'].forEach(n => lamps[n].setAttribute('fill', n === st ? LAMP_ON[n] : LAMP_OFF));
+        });
+    });
+    const ALL_RED = { n:'red', s:'red', e:'red', w:'red' };
+    const peds = k >= 0 ? (stageOf(phase, k).peds || phase.peds || ALL_RED) : ALL_RED;
+    if (peds && SIGNAL_REFS.peds !== JSON.stringify(peds)) {
+        SIGNAL_REFS.peds = JSON.stringify(peds);
+        drawPeds(peds);
+    }
+}
+
+const SPEED = 170, LOOP_GAP = 1.2, RED_DWELL = 1.0, AMBER_LEAD = 0.5, AMBER_OUT = 0.7;
+const REACTION = 0.18, INTERGREEN = 0.9, CLEAR_PX = 18, CLEAR_GAP = 0.35, MIN_DWELL = 0.3;
+const MAX_YIELD_WAIT = 4.5, GAP_OK = 95, PED_SPEED = 62, PED_CLEAR = 0.35, STAGE_GAP = 0.3;
+const CREEP_BACK = 12, LANE_MAX = 4, CYC_SPEED = 74, PED_PASS = 16, STREAM_GAP = 1.1, GLOW_FADE = 0.6;
+
+const LANES = {
+    two:   { nb:[358,394], sb:[322,286], eb:[258,294], wb:[222,186] },
+    three: { nb:[352,376,400], sb:[328,304,280], eb:[252,276,300], wb:[228,204,180] }
+};
+
+function addFollowers(ptL) {
+    animTargets.filter(t => t.p.anim && !t.p.ghost && (t.p.anim.stage || 1) > 0)
+               .filter(t => currentTab === 1 || t.p.anim.hold === undefined).slice().forEach(t => {
+        const odds = currentTab === 1 ? [0.6, 0.4, 0.2] : [0.5, 0.2];
+        for (let i = 1; i <= odds.length; i++) {
+            const path = el('path', { d: t.p.d, fill:'none', stroke:'none' });
+            ptL.appendChild(path);
+            const anim = Object.assign({}, t.p.anim, { startAt: (t.p.anim.startAt || 0) + 0.35 * i, join: false });
+            animTargets.push({ el: path, egoTail: !!t.ego, p: { c: t.p.c, ghost: true, follower: true, rank: t.p.rank, chance: odds[i - 1], anim } });
+        }
+    });
+}
+
+const LINE_DIM = 0.45;
+
+const CROSSWALK = {
+    n: { a:{x:268,y:151}, b:{x:412,y:151}, len:144, perp:{x:0,y:1}, cyc: 16, mid:159 },
+    s: { a:{x:268,y:333}, b:{x:412,y:333}, len:144, perp:{x:0,y:1}, cyc:-16, mid:325 },
+    w: { a:{x:252,y:168}, b:{x:252,y:312}, len:144, perp:{x:1,y:0}, cyc: 16, mid:260 },
+    e: { a:{x:432,y:168}, b:{x:432,y:312}, len:144, perp:{x:1,y:0}, cyc:-16, mid:424 }
+};
+function onCrossing(p, arm) {
+    const c = CROSSWALK[arm];
+    if (arm === 'n' || arm === 's') return Math.abs(p.y - c.mid) < 12 && p.x > 262 && p.x < 418;
+    return Math.abs(p.x - c.mid) < 12 && p.y > 162 && p.y < 318;
+}
+
+function round2(x) { return Math.round(x * 20) / 20; }
+
+function buildPeds(phase, greens, only) {
+    const out = [], nStages = phase.stages ? phase.stages.length : 1;
+    for (let k = 0; k < nStages; k++) {
+        if (only !== undefined && k !== only) continue;
+        const ps = stageOf(phase, k).peds || phase.peds;
+        if (!ps) continue;
+        const base = greens[k] !== undefined ? greens[k] : 0;
+        ['n','s','e','w'].forEach(arm => {
+            if (ps[arm] !== 'green') return;
+            const c = CROSSWALK[arm];
+            const add = (kind, speed, n, lane) => {
+                [1, -1].slice(0, n).forEach((dir, i) => {
+                    const t0 = base + 0.2 * i + (kind === 'cycle' ? 0.35 : 0);
+                    out.push({ arm, kind, stage: k + 1, t0, dir, len: c.len, speed, from: dir > 0 ? c.a : c.b, to: dir > 0 ? c.b : c.a, off: lane + (dir > 0 ? 3 : -3), endT: t0 + c.len / speed });
+                });
+            };
+            add('walk',  PED_SPEED, Math.floor(Math.random() * 3), 0);
+            add('cycle', CYC_SPEED, Math.floor(Math.random() * 2), c.cyc);
+        });
+    }
+    return out;
+}
+
+function addPedStop(v, peds) {
+    if (v.parked || !peds.length) return;
+    const from = (v.stops[0] ? v.stops[0].d : 0) + 24;
+    for (let d = from; d <= v.len; d += 3) {
+        const p = v.el.getPointAtLength(d);
+        const arm = ['n','s','e','w'].find(a => onCrossing(p, a));
+        if (!arm) continue;
+        const mine = peds.filter(pd => pd.arm === arm && pd.stage === v.stage);
+        if (!mine.length) continue;
+        const stopAt = Math.max(0, d - 20 - QUEUE_PX * (v.queueIx || 0));
+        let go = 0;
+        mine.forEach(pd => {
+            const ux = (pd.to.x - pd.from.x) / pd.len, uy = (pd.to.y - pd.from.y) / pd.len;
+            const uCar = (p.x - pd.from.x) * ux + (p.y - pd.from.y) * uy;
+            if (uCar + PED_PASS <= 0) return;
+            const clearAt = pd.t0 + Math.min(pd.len, uCar + PED_PASS) / (pd.speed || PED_SPEED);
+            if (clearAt > go) go = clearAt;
+        });
+        if (go === 0) return;
+        if (!v.stops.length || stopAt > v.stops[v.stops.length - 1].d + 8) {
+            v.stops.push({ d: stopAt, kind: 'ped', release: go + PED_CLEAR, arm });
+            v.stops.sort((x, y) => x.d - y.d);
+            schedule(v);
+        }
+        break;
+    }
+}
+
+function drawCyclist(layer, ped, p, t) {
+    const vert = ped.arm === 'w' || ped.arm === 'e';
+    const ang = vert ? (ped.to.y > ped.from.y ? 90 : -90) : (ped.to.x > ped.from.x ? 0 : 180);
+    const g = el('g', { transform: `translate(${p.x},${p.y}) rotate(${ang})` });
+    g.appendChild(el('ellipse', { cx:0, cy:0, rx:10, ry:6, fill:'#111', opacity:0.3 }));
+    const wh = { fill:'none', stroke:'#ffd21e', 'stroke-width':1.6 };
+    g.appendChild(el('circle', Object.assign({ cx:-5.5, cy:2.5, r:3.4 }, wh)));
+    g.appendChild(el('circle', Object.assign({ cx: 5.5, cy:2.5, r:3.4 }, wh)));
+    g.appendChild(el('path', { d:'M -5.5 2.5 L -0.5 2.5 L 2 -2 L 5.5 2.5 M -0.5 2.5 L 1.5 -3.4 L 5 -3', stroke:'#ffd21e', 'stroke-width':1.5, fill:'none', 'stroke-linecap':'round' }));
+    const lean = Math.sin((t - ped.t0) * 10) * 1.2;
+    g.appendChild(el('circle', { cx:1.2 + lean, cy:-6.6, r:2.4, fill:'#fff', stroke:'#8a6d00', 'stroke-width':1 }));
+    g.appendChild(el('path', { d:`M ${1.2 + lean} -4.6 L 2 -2`, stroke:'#fff', 'stroke-width':2, 'stroke-linecap':'round' }));
+    layer.appendChild(g);
+}
+
+function pedPos(ped, t) {
+    const u = (t - ped.t0) * (ped.speed || PED_SPEED);
+    if (u < 0 || u > ped.len) return null;
+    const c = CROSSWALK[ped.arm];
+    const ux = (ped.to.x - ped.from.x) / ped.len, uy = (ped.to.y - ped.from.y) / ped.len;
+    return { x: ped.from.x + ux * u + c.perp.x * ped.off, y: ped.from.y + uy * u + c.perp.y * ped.off };
+}
+
+function drawPedestrian(layer, ped, t) {
+    const p = pedPos(ped, t); if (!p) return;
+    if (ped.kind === 'cycle') return drawCyclist(layer, ped, p, t);
+    const g = el('g', { transform: `translate(${p.x},${p.y})` });
+    g.appendChild(el('circle', { cx:0, cy:0, r:7, fill:'#111', opacity:0.35 }));
+    g.appendChild(el('circle', { cx:0, cy:-2.6, r:2.6, fill:'#fff', stroke:'#1b5e20', 'stroke-width':1 }));
+    g.appendChild(el('path', { d:'M 0 0 L 0 4', stroke:'#fff', 'stroke-width':2.4, 'stroke-linecap':'round' }));
+    const swing = Math.sin((t - ped.t0) * 9) * 2.6;
+    g.appendChild(el('path', { d:`M 0 4 L ${-2.4 + swing} 7.5`, stroke:'#fff', 'stroke-width':1.8, 'stroke-linecap':'round' }));
+    g.appendChild(el('path', { d:`M 0 4 L ${2.4 + swing} 7.5`, stroke:'#fff', 'stroke-width':1.8, 'stroke-linecap':'round' }));
+    layer.appendChild(g);
+}
+
+const QUEUE_PX = 34;
+let animTargets = [], animState = null, SIGNAL_REFS = {};
+
+const STOP_LINE = { nb: p => p.y <= 351, sb: p => p.y >= 133, eb: p => p.x >= 234, wb: p => p.x <= 450 };
+
+function approachOf(el) {
+    const p = el.getPointAtLength(0);
+    if (p.y > 430) return 'nb'; if (p.y < 50) return 'sb';
+    if (p.x < 150) return 'eb'; return 'wb';
+}
+
+function stopLineDist(el, arm) {
+    const test = STOP_LINE[arm], len = el.getTotalLength();
+    for (let d = 0; d <= len; d += 2) if (test(el.getPointAtLength(d))) return d;
+    return len;
+}
+
+function schedule(v) {
+    let t = v.startAt, d = 0;
+    v.plan = [];
+    v.stops.forEach(st => {
+        const arrive = t + (st.d - d) / SPEED;
+        const depart = Math.max(arrive, st.release !== undefined ? st.release : arrive + MIN_DWELL);
+        v.plan.push({ d: st.d, kind: st.kind, arrive, depart });
+        t = depart; d = st.d;
+    });
+    v.endT = t + (v.len - d) / SPEED;
+}
+
+function stateAt(v, t) {
+    if (t < v.startAt) return null;
+    let bd = 0, bt = v.startAt;
+    for (const st of v.plan) {
+        const arrive = bt + (st.d - bd) / SPEED;
+        if (t < arrive) return { d: bd + (t - bt) * SPEED, waiting: false };
+        if (t < st.depart) return { d: st.d, waiting: true, kind: st.kind };
+        bd = st.d; bt = st.depart;
+    }
+    return { d: bd + (t - bt) * SPEED, waiting: false };
+}
+
+function timeAtDist(v, d) {
+    let bd = 0, bt = v.startAt;
+    for (const st of v.plan) {
+        if (d <= st.d) return bt + (d - bd) / SPEED;
+        bd = st.d; bt = st.depart;
+    }
+    return bt + (d - bd) / SPEED;
+}
+
+function samplePath(el, from, to, step) {
+    const pts = [];
+    for (let d = from; d <= to; d += step) { const p = el.getPointAtLength(d); pts.push({ d, x: p.x, y: p.y }); }
+    return pts;
+}
+
+function firstConflictDist(w, others, from) {
+    const mine = samplePath(w.el, from, w.len, 3);
+    const myStart = w.el.getPointAtLength(0);
+    let best = null;
+    others.forEach(v => {
+        const vs = v.el.getPointAtLength(0);
+        if (Math.hypot(vs.x - myStart.x, vs.y - myStart.y) < 6) return;
+        const theirs = samplePath(v.el, 0, v.len, 3);
+        mine.forEach(a => {
+            if (best !== null && a.d >= best) return;
+            theirs.forEach(b => {
+                if (Math.abs(a.x - b.x) > CLEAR_PX || Math.abs(a.y - b.y) > CLEAR_PX) return;
+                if (Math.hypot(a.x - b.x, a.y - b.y) > CLEAR_PX) return;
+                if (best === null || a.d < best) best = a.d;
+            });
+        });
+    });
+    return best;
+}
+
+function resolveYields(list, settled, greens, redo) {
+    list.filter(v => !v.follower && v.stops.some(st => st.kind === 'yield')).sort((a, b) => a.rank - b.rank).forEach(w => {
+        let si = w.stops.findIndex(st => st.kind === 'yield');
+        if (w.creep && !redo) {
+            const prev = si > 0 ? w.stops[si - 1].d + 12 : 0;
+            const fc = firstConflictDist(w, settled, prev);
+            if (fc !== null) {
+                w.stops[si].d = Math.max(prev, Math.min(w.len - 6, fc - CREEP_BACK - QUEUE_PX * (w.yieldIx || 0)));
+                w.stops.sort((x, y) => x.d - y.d);
+                si = w.stops.findIndex(st => st.kind === 'yield');
+                schedule(w);
+            }
+        }
+        const floor = greens.length && w.stage > 0 ? greens[w.stage - 1] : 0;
+        const myRank = w.rank !== undefined ? w.rank : w.startAt;
+        const others = settled.filter(v => {
+            if (v === w) return false;
+            const waits = v.stops.some(st => st.kind === 'yield');
+            if (!waits) return true;
+            const r = v.rank !== undefined ? v.rank : v.startAt;
+            return r < myRank;
+        });
+        if (w.afterAll) {
+            const rest = settled.filter(v => v !== w && !v.parked);
+            const clear = rest.length ? Math.max(...rest.map(v => timeAtDist(v, exitDist(v)))) : 0;
+            w.stops[si].release = Math.max(w.plan[si].arrive + MIN_DWELL, clear + CLEAR_GAP);
+            schedule(w);
+            settled.push(w);
+            return;
+        }
+        const want = earliestResume(w, si, others);
+        const cap = w.plan[si].arrive + (w.maxWait || MAX_YIELD_WAIT);
+        w.stops[si].release = Math.max(floor, Math.min(want, cap));
+        schedule(w);
+        if (!redo) settled.push(w);
+    });
+}
+
+function positionsAt(tt, lanes, vehicles, skipParked) {
+    const out = new Map();
+    (lanes || []).forEach(q => {
+        let ahead = Infinity;
+        q.forEach(v => {
+            if (v.parked && skipParked) return;
+            const st = stateAt(v, tt);
+            if (!st) return;
+            const split = v.splitAt !== undefined ? v.splitAt : Infinity;
+            const d = st.d < split ? Math.min(st.d, ahead - QUEUE_PX) : st.d;
+            out.set(v, { d, waiting: st.waiting || d < st.d - 0.5, kind: st.kind });
+            ahead = d;
+        });
+    });
+    (vehicles || []).forEach(v => {
+        if (out.has(v) || (v.parked && skipParked)) return;
+        const st = stateAt(v, tt);
+        if (st) out.set(v, st);
+    });
+
+    const groups = new Map();
+    out.forEach((st, v) => {
+        if (st.d > v.len || !v.exitKey) return;
+        if (v.exitD === undefined || st.d < v.exitD - 36) return;
+        if (!groups.has(v.exitKey)) groups.set(v.exitKey, []);
+        groups.get(v.exitKey).push(v);
+    });
+    groups.forEach(list => {
+        if (list.length < 2) return;
+        list.sort((a, b) => (a.mergeT || 0) - (b.mergeT || 0));
+        let aheadLeft = -Infinity;
+        list.forEach(v => {
+            const st = out.get(v);
+            let left = v.len - st.d;
+            if (left < aheadLeft + QUEUE_PX) {
+                left = aheadLeft + QUEUE_PX;
+                out.set(v, { d: Math.max(0, v.len - left), waiting: st.waiting, kind: st.kind });
+            }
+            aheadLeft = left;
+        });
+    });
+    return out;
+}
+
+const EXIT_LEG = 240, SAFE_PX = 20;
+function deconflict(vehicles, total, lanes) {
+    const movers = vehicles;
+    const laneOf = v => { const p = v.el.getPointAtLength(0); return Math.round(p.x) + ',' + Math.round(p.y); };
+    const defers = (a, b) => {
+        if (a.parked !== b.parked) return a.parked ? b : a;
+        if (laneOf(a) === laneOf(b)) return a.queueIx > b.queueIx ? a : b;
+        if (!!a.follower !== !!b.follower) return a.follower ? a : b;
+        const ra = a.rank !== undefined ? a.rank : a.startAt;
+        const rb = b.rank !== undefined ? b.rank : b.startAt;
+        if (ra !== rb) return ra > rb ? a : b;
+        return a.startAt >= b.startAt ? a : b;
+    };
+    const movers2 = () => movers.filter(v => !v.drop);
+    for (let pass = 0; pass < 60; pass++) {
+        let worst = null;
+        for (let t = 0; t <= total; t += 0.06) {
+            const live = [];
+            const pos = positionsAt(t, lanes, movers2(), false);
+            movers2().forEach(v => {
+                const st = pos.get(v);
+                if (!st || st.d < 0 || st.d > v.len) return;
+                const p = v.el.getPointAtLength(st.d);
+                live.push({ v, x: p.x, y: p.y });
+            });
+            for (let i = 0; i < live.length; i++) for (let j = i + 1; j < live.length; j++) {
+                const dd = Math.hypot(live[i].x - live[j].x, live[i].y - live[j].y);
+                if (dd < SAFE_PX && (!worst || dd < worst.d)) worst = { d: dd, a: live[i].v, b: live[j].v };
+            }
+        }
+        if (!worst) return true;
+        if (worst.a.parked && worst.b.parked) { worst.b.drop = true; continue; }
+        if (worst.a.drop || worst.b.drop) continue;
+        const late = defers(worst.a, worst.b);
+        late.tries = (late.tries || 0) + 1;
+        if (late.tries > 6 && (late.follower || late.chance !== undefined)) { late.drop = true; continue; }
+        const by = Math.max(0.15, (SAFE_PX - worst.d) / SPEED + 0.08);
+        if (late.stops.length) {
+            const st = late.stops[late.stops.length - 1];
+            st.release = (st.release !== undefined ? st.release : 0) + by;
+        } else {
+            late.startAt += by;
+        }
+        schedule(late);
+    }
+    return false;
+}
+
+function divergeDist(a, b) {
+    const lim = Math.min(a.getTotalLength(), b.getTotalLength());
+    for (let d = 0; d <= lim; d += 4) {
+        const p = a.getPointAtLength(d), q = b.getPointAtLength(d);
+        if (Math.hypot(p.x - q.x, p.y - q.y) > 18) return d;
+    }
+    return lim;
+}
+
+function applyFollowing(lanes, stage) {
+    Object.values(lanes).forEach(q => {
+        let lead = null;
+        q.filter(v => !v.parked && (stage === undefined || v.stage === stage)).sort((a, b) => a.queueIx - b.queueIx).forEach(v => {
+            if (lead && v.follower) {
+                const split = divergeDist(v.el, lead.el);
+                v.stops = lead.stops.filter(ls => ls.d <= split).map((ls, j) => ({
+                        d: Math.max(0, ls.d - QUEUE_PX), kind: ls.kind,
+                        release: (lead.plan[j] ? lead.plan[j].depart : lead.startAt) + REACTION
+                    }));
+                if (!v.stops.length && v.yieldAt !== undefined) v.stops.push({ d: Math.min(v.yieldAt, v.len), kind: 'yield' });
+                v.startAt = Math.max(v.startAt, lead.startAt + QUEUE_PX / SPEED);
+                schedule(v); lead = v; return;
+            }
+            if (lead) {
+                const leadGo = lead.plan.length ? lead.plan[lead.plan.length - 1].depart : lead.startAt;
+                v.stops.forEach((st, j) => {
+                    if (st.release !== undefined && st.release < leadGo + REACTION && st.d >= lead.stops[lead.stops.length - 1].d - QUEUE_PX - 12) st.release = leadGo + REACTION;
+                });
+                const aheadGo = lead.plan.length ? lead.plan[lead.plan.length - 1].depart : lead.startAt;
+                const myLast = v.stops[v.stops.length - 1];
+                if (myLast && myLast.release !== undefined) myLast.release = Math.max(myLast.release, aheadGo + REACTION);
+
+                const split = divergeDist(v.el, lead.el);
+                lead.stops.forEach((ls, j) => {
+                    if (ls.d > split) return;
+                    const d = Math.max(0, ls.d - QUEUE_PX);
+                    const rel = (lead.plan[j] ? lead.plan[j].depart : 0) + REACTION;
+                    const near = v.stops.find(x => Math.abs(x.d - d) < 12);
+                    if (near) { near.d = Math.min(near.d, d); near.release = Math.max(near.release || 0, rel); }
+                    else v.stops.push({ d, kind: ls.kind === 'signal' ? 'signal' : 'ped', release: rel });
+                });
+                v.stops.sort((a, b) => a.d - b.d);
+                schedule(v);
+            }
+            lead = v;
+        });
+    });
+}
+
+function exitMarkDist(v) {
+    const from = exitDist(v) - 10;
+    for (let d = Math.max(0, from); d <= v.len; d += 3) {
+        const p = v.el.getPointAtLength(d);
+        if (['n','s','e','w'].some(a => onCrossing(p, a))) return Math.min(v.len, d + 14);
+    }
+    return exitDist(v);
+}
+
+const ZONE = { x1: 268 - 46, x2: 412 + 46, y1: 168 - 46, y2: 312 + 46 };
+const inZone = p => p.x > ZONE.x1 && p.x < ZONE.x2 && p.y > ZONE.y1 && p.y < ZONE.y2;
+
+function earliestResume(w, si, others) {
+    const from = w.stops[si].d, arrive = w.plan[si].arrive;
+    let t = arrive, conflict = false;
+    const mine = samplePath(w.el, from, w.len, 4), myStart = w.el.getPointAtLength(0);
+    others.forEach(v => {
+        const vs = v.el.getPointAtLength(0);
+        if (Math.hypot(vs.x - myStart.x, vs.y - myStart.y) < 8) return;
+        const theirs = samplePath(v.el, 0, v.len, 4);
+        let meets = false;
+        const vNow = stateAt(v, arrive + MIN_DWELL), vStill = vNow && vNow.waiting;
+        const vQueuing = v.stops.some(st => st.kind === 'yield');
+        const vPt = vNow ? v.el.getPointAtLength(Math.max(0, Math.min(vNow.d, v.len))) : null;
+
+        mine.forEach(a => {
+            if (!inZone(a)) return;
+            theirs.forEach(b => {
+                if (Math.abs(a.x - b.x) > CLEAR_PX || Math.abs(a.y - b.y) > CLEAR_PX) return;
+                if (Math.hypot(a.x - b.x, a.y - b.y) > CLEAR_PX) return;
+                meets = true;
+                if (vStill && !vQueuing && vPt && Math.hypot(vPt.x - b.x, vPt.y - b.y) > GAP_OK) return;
+                conflict = true;
+                const need = timeAtDist(v, b.d) + CLEAR_GAP - (a.d - from) / SPEED;
+                if (need > t) t = need;
+            });
+        });
+        if (meets && conflict) {
+            const theirGo = v.plan.length ? v.plan[v.plan.length - 1].depart : v.startAt;
+            if (theirGo + 0.15 > t) t = theirGo + 0.15;
+        }
+    });
+    if (!conflict) return arrive;
+    return Math.round(Math.max(t, arrive + MIN_DWELL) * 20) / 20;
+}
+
+function renderAnimBar(phase) {
+    const bar = document.getElementById('anim-bar');
+    stopAnim();
+    if (!phase.paths.some(p => p.anim)) { bar.innerHTML = ''; return; }
+    bar.innerHTML = `
+      <button class="btn btn-play" id="anim-play" onclick="togglePlay()">▶ Play</button>
+      <button class="btn" onclick="stepAnim(-0.25)" title="Step back 0.25s">◀◀</button>
+      <button class="btn" onclick="stepAnim(0.25)" title="Step forward 0.25s">▶▶</button>
+      <button class="btn" onclick="restartAnim()" title="Back to the start">⟲</button>
+      <input type="range" id="anim-scrub" class="scrub" min="0" max="1000" value="0" oninput="scrubAnim(this.value)" title="Drag to any moment">
+      <span class="clock" id="anim-clock">0.0s</span>
+      <span class="speed" title="How fast the clip plays"><button id="spd-dn" onclick="nudgeRate(-1)">&minus;</button><span id="spd-now">1&times;</span><button id="spd-up" onclick="nudgeRate(1)">+</button></span>`;
+    showRate();
+    buildAnim(phase);
+}
+
+function entryDist(el) {
+    const len = el.getTotalLength();
+    for (let d = 0; d <= len; d += 2) {
+        const p = el.getPointAtLength(d);
+        if (p.x >= 262 && p.x <= 418 && p.y >= 162 && p.y <= 318) return Math.max(0, d - 6);
+    }
+    return len;
+}
+
+function exitDist(v) {
+    let last = 0;
+    for (let d = 0; d <= v.len; d += 4) {
+        const p = v.el.getPointAtLength(d);
+        if (p.x >= 262 && p.x <= 418 && p.y >= 162 && p.y <= 318) last = d;
+    }
+    return Math.min(v.len, last + 14);
+}
+
+function buildAnim(phase) {
+    const signalled = currentTab === 1 && (!!phase.signals || !!phase.stages);
+    let vehicles = animTargets.filter(t => t.p.anim).map(t => {
+        const a = t.p.anim, el = t.el, len = el.getTotalLength();
+        return { el, color: t.p.c, len, startAt: a.startAt || 0, rank: a.resumeAt !== undefined ? a.resumeAt : (a.startAt || 0), stage: a.stage !== undefined ? a.stage : 1, startAt0: a.startAt || 0, join: !!a.join, creep: !!a.creep, afterAll: !!a.afterAll, maxWait: a.maxWait, ego: !!t.ego, egoTail: !!t.egoTail, movePrio: t.p.rank, lane: t.p.lane, idx: t.p.idx, exitKey: (() => { const e = el.getPointAtLength(len); return Math.round(e.x / 12) + ':' + Math.round(e.y / 12); })(), follower: !!t.p.follower, pick: t.p.pick, chance: t.p.chance, parked: a.stage === 0 || !!a.park, yieldAt: a.hold !== undefined ? entryDist(el) : undefined, dwell: a.dwell, arm: approachOf(el), stops: [] };
+    });
+    if (!vehicles.length) return;
+
+    const chosen = {};
+    vehicles.forEach(v => {
+        if (v.pick === undefined || chosen[v.pick] !== undefined) return;
+        const members = vehicles.filter(x => x.pick === v.pick);
+        chosen[v.pick] = members[Math.floor(Math.random() * members.length)].idx;
+    });
+    vehicles = vehicles.filter(v => {
+        if (v.pick !== undefined) return v.idx === chosen[v.pick];
+        if (v.chance !== undefined) return Math.random() < v.chance;
+        return true;
+    });
+
+    const laneKey = v => { const p = v.el.getPointAtLength(0); return v.arm + '|' + Math.round(p.x) + ',' + Math.round(p.y); };
+    const isRed = v => (v.color || '').indexOf('red') >= 0;
+    const laneRank = v => isRed(v) ? 0 : (v.egoTail ? 2 : 1);
+    const movePrio = v => v.movePrio === undefined ? 99 : v.movePrio;
+    const queueOrder = (a, b) => movePrio(a) - movePrio(b) || laneRank(a) - laneRank(b) || (a.join ? 1 : 0) - (b.join ? 1 : 0) || a.startAt - b.startAt;
+
+    const byLane = {};
+    vehicles.forEach(v => { if (!v.parked) (byLane[laneKey(v)] = byLane[laneKey(v)] || []).push(v); });
+    Object.values(byLane).forEach(q => {
+        q.sort(queueOrder);
+        for (let i = q.length - 1; i >= 0 && q.filter(x => !x.drop).length > LANE_MAX; i--) if (q[i].follower) q[i].drop = true;
+    });
+    vehicles = vehicles.filter(v => !v.drop);
+
+    const routesMeet = (a, b) => {
+        const pa = samplePath(a.el, 0, a.len, 5), pb = samplePath(b.el, 0, b.len, 5);
+        return pa.some(x => inZone(x) && pb.some(y => Math.abs(x.x - y.x) <= CLEAR_PX && Math.abs(x.y - y.y) <= CLEAR_PX && Math.hypot(x.x - y.x, x.y - y.y) <= CLEAR_PX));
+    };
+    const drawnFor = {};
+    vehicles.forEach(o => { const d = o.el.getAttribute('d'); if (d && o.el.getAttribute('stroke') !== 'none' && !drawnFor[d]) drawnFor[d] = o.el; });
+    vehicles.filter(v => v.ego).forEach(v => {
+        const myStart = v.el.getPointAtLength(0), myRank = v.rank !== undefined ? v.rank : v.startAt;
+        const els = new Set();
+        vehicles.forEach(o => {
+            if (o === v || o.parked) return;
+            const os = o.el.getPointAtLength(0);
+            if (Math.hypot(os.x - myStart.x, os.y - myStart.y) < 8) return;
+            const oRank = o.rank !== undefined ? o.rank : o.startAt;
+            if (oRank >= myRank) return;
+            const line = drawnFor[o.el.getAttribute('d')];
+            if (line && line !== v.el && routesMeet(v, o)) els.add(line);
+        });
+        v.flashEls = [...els];
+    });
+
+    vehicles.forEach(v => {
+        v.turn = turnOfPath(v.el, v.len);
+        if (!v.turn) return;
+        v.indOn = Math.max(0, entryDist(v.el) - 150); v.indOff = Math.min(v.len, exitDist(v) + 18);
+    });
+
+    const lanes = {};
+    vehicles.forEach(v => { (lanes[laneKey(v)] = lanes[laneKey(v)] || []).push(v); });
+    Object.values(lanes).forEach(q => {
+        q.sort(queueOrder);
+        let prev = -99;
+        q.forEach((v, i) => { v.queueIx = i; if (!v.join) { v.startAt = Math.max(v.startAt, prev + QUEUE_PX / SPEED); prev = v.startAt; } });
+        q.filter(v => v.yieldAt !== undefined).forEach((v, i) => { v.yieldIx = i; });
+    });
+
+    vehicles.forEach(v => {
+        if (signalled || v.parked) {
+            const d = Math.max(0, stopLineDist(v.el, v.arm) - QUEUE_PX * v.queueIx);
+            v.stops.push({ d, kind: 'signal' });
+        }
+        if (v.yieldAt !== undefined) {
+            const d = Math.max(0, Math.min(v.yieldAt, v.len) - QUEUE_PX * (v.yieldIx || 0));
+            if (!v.stops.length || d > v.stops[v.stops.length - 1].d + 4) v.stops.push({ d, kind: v.dwell !== undefined ? 'ped' : 'yield' });
+        }
+        schedule(v);
+    });
+
+    const greens = [], ends = [], peds = [], settled = [];
+    if (signalled) {
+        const nStages = phase.stages ? phase.stages.length : 1;
+        let cleared = 0;
+        for (let k = 0; k < nStages; k++) {
+            const mine = vehicles.filter(v => v.stage === k + 1 && !v.parked);
+            if (k === 0) {
+                const first = vehicles.filter(v => v.stage <= 1 || v.parked);
+                greens.push(round2(Math.max(...first.map(v => v.plan[0].arrive)) + RED_DWELL));
+            } else {
+                const joiners = mine.filter(v => v.join);
+                joiners.forEach(v => { v.startAt = cleared + STAGE_GAP + v.startAt0; schedule(v); });
+                const arrivals = (joiners.length ? joiners : mine).map(v => v.plan[0].arrive);
+                greens.push(round2(Math.max(...arrivals) + RED_DWELL));
+            }
+            mine.forEach(v => { v.stops[0].release = greens[k] + REACTION * v.queueIx; schedule(v); });
+
+            const minePeds = buildPeds(phase, greens, k);
+            peds.push(...minePeds);
+            mine.forEach(v => addPedStop(v, minePeds));
+
+            Object.values(lanes).forEach(q => {
+                const run = q.filter(v => !v.parked && v.stage === k + 1).sort((a, b) => a.queueIx - b.queueIx);
+                for (let i = 1; i < run.length; i++) {
+                    const lead = run[i - 1], me = run[i];
+                    lead.stops.forEach((st, si) => {
+                        if (st.kind !== 'ped') return;
+                        const d = Math.max(0, st.d - QUEUE_PX);
+                        const rel = lead.plan[si].depart + REACTION;
+                        const existing = me.stops.find(x => Math.abs(x.d - d) < 10);
+                        if (existing) existing.release = Math.max(existing.release || 0, rel);
+                        else { me.stops.push({ d, kind: 'ped', release: rel }); me.stops.sort((a, b) => a.d - b.d); }
+                        schedule(me);
+                    });
+                }
+            });
+
+            settled.push(...mine.filter(v => v.follower || !v.stops.some(st => st.kind === 'yield')));
+            resolveYields(mine, settled, greens);
+            for (let pass = 0; pass < 3; pass++) { resolveYields(mine, settled, greens, true); applyFollowing(lanes, k + 1); }
+
+            const stageEnds = mine.map(v => timeAtDist(v, exitMarkDist(v))).concat(minePeds.map(p => p.endT));
+            cleared = stageEnds.length ? Math.max(...stageEnds) : greens[k];
+            ends.push(round2(cleared + 0.2));
+        }
+    }
+    vehicles.filter(v => v.parked).forEach(v => { v.stops[0].release = 1e6; schedule(v); });
+
+    if (!signalled) {
+        const active = vehicles.filter(v => !v.parked);
+        settled.push(...active.filter(v => v.follower || !v.stops.some(st => st.kind === 'yield')));
+        resolveYields(active, settled, greens);
+        for (let pass = 0; pass < 3; pass++) { resolveYields(active, settled, greens, true); applyFollowing(lanes); }
+    }
+
+    const makeLanes = () => {
+        const qs = Object.values(lanes).map(q => q.filter(v => vehicles.indexOf(v) >= 0 && !v.drop).sort((a, b) => a.queueIx - b.queueIx)).filter(q => q.length > 1);
+        qs.forEach(q => q.forEach((v, i) => { v.splitAt = i === 0 ? Infinity : divergeDist(v.el, q[i - 1].el); }));
+        vehicles.forEach(v => { v.exitD = exitDist(v); v.mergeT = timeAtDist(v, v.exitD); });
+        return qs;
+    };
+    const laneQs0 = makeLanes();
+
+    {
+        let qs = laneQs0;
+        for (let round = 0; round < 3; round++) {
+            const rough = Math.max(...vehicles.filter(v => !v.parked).map(v => v.endT), 1);
+            const clean = deconflict(vehicles, rough, qs);
+            const dropped = vehicles.some(v => v.drop);
+            vehicles = vehicles.filter(v => !v.drop);
+            if (clean && !dropped) break;
+            qs = makeLanes();
+        }
+    }
+
+    const moving = vehicles.filter(v => !v.parked);
+    const clear = moving.map(v => timeAtDist(v, exitDist(v))).concat(peds.map(p => p.endT));
+    const total = Math.max(...clear, 1) + STREAM_GAP;
+    const latest = Math.max(...moving.map(v => v.endT).concat(peds.map(p => p.endT)), total);
+    const waves = Math.min(4, Math.max(1, Math.ceil(latest / total)));
+    const laneQs = makeLanes();
+    animState = { vehicles, peds, total, waves, lanes: laneQs, t: 0, greens, ends, playing: false, lastNow: 0, raf: 0 };
+    drawFrame(0);
+    animState.raf = requestAnimationFrame(animLoop);
+}
+
+function stopAnim() {
+    if (animState) cancelAnimationFrame(animState.raf);
+    animState = null;
+    const l = document.getElementById('layer-vehicles'); if (l) l.innerHTML = '';
+}
+
+function reshuffle(play) {
+    if (!CURRENT_PHASE) return;
+    stopAnim();
+    buildAnim(CURRENT_PHASE);
+    if (animState && play) { animState.playing = true; animState.lastNow = performance.now(); }
+    const b = document.getElementById('anim-play');
+    if (b) { b.textContent = play ? '⏸ Pause' : '▶ Play'; b.classList.toggle('btn-play', !play); }
+}
+
+function togglePlay() {
+    if (!animState) return;
+    if (!animState.playing && animState.t === 0) { reshuffle(true); return; }
+    animState.playing = !animState.playing;
+    animState.lastNow = performance.now();
+    const b = document.getElementById('anim-play');
+    b.textContent = animState.playing ? '⏸ Pause' : '▶ Play';
+    b.classList.toggle('btn-play', !animState.playing);
+}
+
+function stepAnim(dt) { if (!animState) return; pauseAnim(); seek(Math.min(animState.total, Math.max(0, animState.t + dt))); }
+function scrubAnim(v) { if (animState) { pauseAnim(); seek(v / 1000 * animState.total); } }
+function restartAnim() { if (animState) { pauseAnim(); seek(0); } }
+
+function pauseAnim() {
+    if (!animState || !animState.playing) return;
+    animState.playing = false;
+    const b = document.getElementById('anim-play');
+    if (b) { b.textContent = '▶ Play'; b.classList.add('btn-play'); }
+}
+
+function seek(t) {
+    animState.t = t;
+    drawFrame(t);
+    const sc = document.getElementById('anim-scrub');
+    if (sc) {
+        const pct = t / animState.total * 100;
+        sc.value = Math.round(pct * 10);
+        sc.style.setProperty('--pct', pct.toFixed(2) + '%');
+    }
+}
+
+const RATES = [0.25, 0.5, 0.75, 1, 1.5, 2];
+let rateIx = 2;
+
+function showRate() {
+    const lab = document.getElementById('spd-now'), dn = document.getElementById('spd-dn'), up = document.getElementById('spd-up');
+    if (lab) lab.textContent = RATES[rateIx] + '\u00d7';
+    if (dn) dn.disabled = rateIx === 0;
+    if (up) up.disabled = rateIx === RATES.length - 1;
+}
+function nudgeRate(step) { rateIx = Math.min(RATES.length - 1, Math.max(0, rateIx + step)); showRate(); }
+
+function animLoop(now) {
+    if (!animState) return;
+    if (animState.playing) {
+        if (!animState.lastNow) animState.lastNow = now;
+        let t = animState.t + (now - animState.lastNow) / 1000 * RATES[rateIx];
+        animState.lastNow = now;
+        if (t >= animState.total) t -= animState.total;
+        seek(t);
+    }
+    animState.raf = requestAnimationFrame(animLoop);
+}
+
+function drawFrame(t) {
+    const layer = document.getElementById('layer-vehicles');
+    const clock = document.getElementById('anim-clock');
+    if (clock) clock.textContent = t.toFixed(1) + 's';
+    layer.innerHTML = '';
+    updateSignals(t, animState.greens, animState.ends);
+    
+    // Draw orthogonal yield lines ONLY when the ego vehicle actually has a yield stop
+    (animState.vehicles || []).forEach(v => {
+        if (!v.ego || v.follower || (v.yieldIx && v.yieldIx > 0)) return;
+
+        v.stops.forEach(st => {
+            // Check that the stop is a yield stop AND the scenario requires yielding
+            if (st.kind === 'yield' && v.yieldAt !== undefined) {
+                const lineDist = Math.min(v.len, st.d + 16);
+                const p = v.el.getPointAtLength(lineDist);
+                const p2 = v.el.getPointAtLength(Math.min(v.len, lineDist + 1));
+                const ang = Math.atan2(p2.y - p.y, p2.x - p.x);
+                
+                const len = 10; 
+                const x1 = p.x + Math.cos(ang - Math.PI/2) * len;
+                const y1 = p.y + Math.sin(ang - Math.PI/2) * len;
+                const x2 = p.x + Math.cos(ang + Math.PI/2) * len;
+                const y2 = p.y + Math.sin(ang + Math.PI/2) * len;
+
+                const col = '#19b5ff';
+
+                layer.appendChild(el('line', {x1: x1, y1: y1, x2: x2, y2: y2, stroke: col, 'stroke-width': 2.5}));
+                layer.appendChild(el('circle', {cx: x1, cy: y1, r: 2.5, fill: col}));
+                layer.appendChild(el('circle', {cx: x2, cy: y2, r: 2.5, fill: col}));
+            }
+        });
+    });
+
+    for (let k = 0; k < (animState.waves || 1); k++) {
+        const tt = t + k * animState.total;
+        const capped = positionsAt(tt, animState.lanes, animState.vehicles, k > 0);
+        animState.vehicles.forEach(v => {
+            if (v.parked && k > 0) return;
+            const st = capped.get(v) || stateAt(v, tt);
+            if (k === 0 && !v.parked) {
+                const prog = st ? Math.min(1, Math.max(0, st.d / v.len)) : 0;
+                let op = LINE_DIM + (1 - LINE_DIM) * prog, width = 3;
+                const gi = v.stage - 1, gs = animState.greens || [], ge = animState.ends || [];
+                if (gi >= 0 && gs[gi] !== undefined) {
+                    const end = ge[gi] !== undefined ? ge[gi] : gs[gi];
+                    let glow = 0;
+                    if (t >= gs[gi] && t < end) glow = 1;
+                    else if (t >= end && t < end + GLOW_FADE) glow = 1 - (t - end) / GLOW_FADE;
+                    if (glow > 0) { op = Math.max(op, 0.62 + 0.38 * glow); width = 3 + 1.6 * glow; }
+                }
+                v.el.setAttribute('opacity', op.toFixed(3));
+                v.el.setAttribute('stroke-width', width.toFixed(2));
+            }
+            if (!st || st.d < 0 || st.d > v.len) return;
+            drawVehicle(layer, v, st.d, st.waiting && st.kind !== 'signal', tt);
+        });
+        (animState.peds || []).forEach(pd => drawPedestrian(layer, pd, tt));
+    }
+    flashGiveWay(t);
+}
+
+const FLASH_HZ = 1.6, FLASH_TAIL = 0.8;
+
+function flashWindow(v, t) {
+    return (v.plan || []).find(p => p.kind && p.kind !== 'signal' && p.depart - p.arrive >= MIN_DWELL - 0.05 && t >= p.arrive && t < p.depart + FLASH_TAIL);
+}
+
+function flashGiveWay(t) {
+    Object.keys(PED_REFS).forEach(a => PED_REFS[a].forEach(r => r.setAttribute('opacity', 1)));
+    const lit = Math.sin(t * Math.PI * 2 * FLASH_HZ) > 0;
+    (animState.vehicles || []).forEach(v => {
+        if (!v.ego) return;
+        const w = flashWindow(v, t);
+        if (!w) return;
+        (v.flashEls || []).forEach(e => {
+            e.setAttribute('opacity', lit ? 1 : 0.08);
+            e.setAttribute('stroke-width', lit ? 6.5 : 1.8);
+        });
+        if (w.kind === 'ped') {
+            const arm = (v.stops.find(x => x.kind === 'ped' && Math.abs(x.d - w.d) < 1) || {}).arm;
+            (PED_REFS[arm] || []).forEach(r => r.setAttribute('opacity', lit ? 1 : 0.12));
+        }
+    });
+}
+
+function stageOf(phase, k) { return (phase.stages && phase.stages[k]) || phase; }
+
+let PED_REFS = {};
+function drawPeds(peds) {
+    const pdL = document.getElementById('layer-peds');
+    pdL.innerHTML = ''; PED_REFS = {};
+    ['n','s','e','w'].forEach(arm=>{
+        const isAct = peds[arm]==='green', col = isAct ? '#4caf50' : 'white';
+        let cx=340, cy=240;
+        const cyc = isAct ? '#2f9bff' : '#c79a12';
+        PED_REFS[arm] = [];
+        const bars = (list, inner, mk) => list.forEach(v => {
+            const r = el('rect', Object.assign(mk(v), { fill: v === inner ? cyc : col }));
+            pdL.appendChild(r); PED_REFS[arm].push(r);
+        });
+        if (arm==='n') { bars([149,157,165],165,y=>({x:268,y:y,width:144,height:4})); cy=157; }
+        if (arm==='s') { bars([315,323,331],315,y=>({x:268,y:y,width:144,height:4})); cy=323; }
+        if (arm==='w') { bars([250,258,266],266,x=>({x:x,y:168,width:4,height:144})); cx=258; }
+        if (arm==='e') { bars([414,422,430],414,x=>({x:x,y:168,width:4,height:144})); cx=422; }
+
+        if (isAct) {
+            const aAttrs = (arm==='n'||arm==='s') ? { d:`M ${cx-20} ${cy} L ${cx+20} ${cy}`, stroke:'white','stroke-width':2,'marker-end':'url(#arrow-green)',fill:'none' } : { d:`M ${cx} ${cy-20} L ${cx} ${cy+20}`, stroke:'white','stroke-width':2,'marker-end':'url(#arrow-green)',fill:'none' };
+            pdL.appendChild(el('path',aAttrs));
+        }
+
+        const pCol = isAct ? '#4caf50' : 'red';
+        const PPOS = { n: [[258,146],[422,146]], s: [[258,338],[422,338]], w: [[246,158],[246,326]], e: [[434,158],[434,326]] };
+        PPOS[arm].forEach(([px,py])=>{
+            pdL.appendChild(el('circle',{cx:px,cy:py,r:6.5,fill:pCol, stroke:'#10131a','stroke-width':1}));
+            const t=el('text',{x:px,y:py+2.8,fill:'white','font-size':'8.5px','text-anchor':'middle','font-weight':'bold'});
+            t.textContent='P'; pdL.appendChild(t);
+        });
+    });
+}
+
+const EGO_COLOR = '#19b5ff';
+const EGO = {
+    '1/1/1': ['t_nb_l', 't_sb_l'],     '1/1/2': ['t_eb_l', 't_wb_l'],
+    '1/2/1': ['s_nb_l_p', 's_sb_l_p'], '1/2/2': ['s_eb_l_p', 's_wb_l_p'],
+    '1/3/1': ['s_nb_r', 's_sb_r'],     '1/3/2': ['s_eb_r', 's_wb_r'],
+    '1/4/1': ['s_nb_l_p', 's_sb_l_p', 's_nb_r', 's_sb_r'], '1/4/2': ['s_eb_l_p', 's_wb_l_p', 's_eb_r', 's_wb_r'],
+    '2/5/1': ['r_eb_s', 'r_eb_r'], '2/5/2': ['r_eb_l'], '2/5/3': ['r_nb_s'], '2/5/4': ['r_nb_r'], '2/5/5': ['r_nb_l'],
+    '2/6/1': ['r_nb_s'], '2/6/2': ['r_nb_r'], '2/6/3': ['r_nb_l']
+};
+
+function carBody(g, color) {
+    [-7, 5].forEach(wx => [-8.5, 5.5].forEach(wy => g.appendChild(el('rect', { x:wx, y:wy, width:9, height:3, rx:1.2, fill:'#1a1a1a' }))));
+    g.appendChild(el('rect', { x:-14, y:-7, width:28, height:14, rx:5, fill:color, stroke:'#fff', 'stroke-width':1.4 }));
+    g.appendChild(el('path', { d:'M 1 -5.6 L 7.5 -3.4 L 7.5 3.4 L 1 5.6 Z', fill:'#dbeafe', opacity:0.92 }));
+    g.appendChild(el('rect', { x:-8.5, y:-5, width:5, height:10, rx:1.5, fill:'#dbeafe', opacity:0.75 }));
+    [-4.2, 4.2].forEach(hy => g.appendChild(el('circle', { cx:12, cy:hy, r:1.7, fill:'#fffbe6' })));
+}
+
+function egoRing(g, bright) {
+    const b = bright === undefined ? 1 : bright;
+    g.appendChild(el('circle', { cx:0, cy:0, r:18, fill:'none', stroke:'#ffffff', 'stroke-width':5, opacity:0.85 * b * b }));
+    g.appendChild(el('circle', { cx:0, cy:0, r:18, fill:'none', stroke:EGO_COLOR, 'stroke-width': 2.2 + 0.9 * b, 'stroke-dasharray':'6,4.2', opacity: 0.42 + 0.58 * b }));
+}
+
+function egoBright(v, t) {
+    const gs = (animState && animState.greens) || [];
+    if (!gs.length) return 1;
+    const ge = (animState && animState.ends) || [], i = v.stage - 1;
+    if (i < 0 || gs[i] === undefined) return 0.28;
+    const end = ge[i] !== undefined ? ge[i] : gs[i];
+    if (t >= gs[i] - AMBER_LEAD && t < end + GLOW_FADE) return 1;
+    return 0.45;
+}
+
+function drawKey() {
+    const kL = document.getElementById('layer-key');
+    kL.innerHTML = '';
+    const g = el('g', { transform: 'translate(108,10)' });
+    const car = el('g', { transform: 'translate(17,13) scale(0.46) rotate(-90)' });
+    egoRing(car); carBody(car, 'var(--color-blue)');
+    g.appendChild(car);
+    const t1 = el('text', { x:36, y:17, fill:'#ffffff', 'font-size':'10.5px', 'font-family': "'Trebuchet MS','Gill Sans','Segoe UI',sans-serif", 'font-weight':600, 'letter-spacing':'1.8px', 'paint-order':'stroke', stroke:'#10131a', 'stroke-width':'3px' });
+    t1.textContent = 'EGO VEHICLE';
+    g.appendChild(t1);
+    kL.appendChild(g);
+}
+
+const TURN_DIR = { N:'S', S:'N', E:'W', W:'E' }, TURN_RIGHT = { N:'W', W:'S', S:'E', E:'N' };
+function turnBetween(a, b) {
+    if (!a || !b || a === b || TURN_DIR[a] === b) return null;
+    return TURN_RIGHT[a] === b ? 'R' : 'L';
+}
+function turnOfPath(el, len) { return turnBetween(armOf(el.getPointAtLength(0)), armOf(el.getPointAtLength(len))); }
+function armOf(p) { return [['N', p.y], ['S', 480 - p.y], ['W', p.x - 100], ['E', 580 - p.x]].sort((a, b) => a[1] - b[1])[0][0]; }
+
+function drawAnnotations(phase) {
+    const aL = document.getElementById('layer-anno');
+    aL.innerHTML = '';
+    const live = phase.arms || ['N','S','E','W'];
+    [['N',340,22],['S',340,462],['W',112,240],['E',568,240]].filter(([c]) => live.indexOf(c) >= 0).forEach(([c,x,y]) => {
+        const t = el('text', { x:x, y:y+4.5, fill:'#ffffff', 'font-size':'14px', 'font-family': "'Trebuchet MS','Gill Sans','Segoe UI',sans-serif", 'font-weight':'bold', 'letter-spacing':'0.8px', 'text-anchor':'middle', 'paint-order':'stroke', stroke:'#10131a', 'stroke-width':'3.4px' });
+        t.textContent = c; aL.appendChild(t);
+    });
+}
+
+function drawVehicle(layer, v, d, waiting, t) {
+    const a = v.el.getPointAtLength(d), b = v.el.getPointAtLength(Math.min(v.len, d + 1));
+    const ang = Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI;
+    const g = el('g', { transform: `translate(${a.x},${a.y}) rotate(${ang})` });
+    if (waiting) {
+        const pulse = v.ego ? 10 + 2.4 * Math.sin(t * 6) : 16 + 4 * Math.sin(t * 6);
+        g.appendChild(el('circle', { cx:0, cy:0, r:pulse, fill:'none', stroke:'#ffd54f', 'stroke-width':2.5, opacity:0.95 }));
+        g.appendChild(el('circle', { cx:0, cy:0, r:pulse, fill:'#ffd54f', opacity:0.12 }));
+    }
+    carBody(g, v.color);
+    if (v.turn && d >= v.indOn && d <= v.indOff && Math.sin(t * Math.PI * 4) > 0) {
+        const iy = v.turn === 'L' ? -6 : 6;
+        [12, -12].forEach(ix => {
+            g.appendChild(el('circle', { cx:ix, cy:iy, r:5.2, fill:'#ffb300', opacity:0.3 }));
+            g.appendChild(el('circle', { cx:ix, cy:iy, r:2.7, fill:'#ffc62e', stroke:'#6b4200', 'stroke-width':0.7 }));
+        });
+    }
+    if (v.ego) {
+        const ring = el('g', { transform: `translate(${a.x},${a.y})` });
+        egoRing(ring, egoBright(v, t));
+        layer.appendChild(ring);
+    }
+    layer.appendChild(g);
+}
+
+function renderSVG(scen, phase) {
+    const bgL=document.getElementById('layer-bg'), rdL=document.getElementById('layer-roads'),
+          pdL=document.getElementById('layer-peds'), sgL=document.getElementById('layer-signals'),
+          ptL=document.getElementById('layer-paths'), mkL=document.getElementById('layer-markers');
+    const vhL=document.getElementById('layer-vehicles');
+    [bgL,rdL,pdL,sgL,ptL,mkL,vhL].forEach(l=>l.innerHTML='');
+    animTargets = [];
+    SIGNAL_REFS = { phase: (currentTab===1 && (phase.signals || phase.stages)) ? phase : null };
+
+    const ARMS = phase.arms || ['N','S','E','W'], has = a => ARMS.indexOf(a) >= 0;
+    bgL.appendChild(el('rect',{x:100,y:0,width:480,height:480,fill:'#6c757d'}));
+    if (has('N')) rdL.appendChild(el('rect',{x:268,y:0,width:144,height:168,fill:'#343a40'}));
+    if (has('S')) rdL.appendChild(el('rect',{x:268,y:312,width:144,height:168,fill:'#343a40'}));
+    if (has('W')) rdL.appendChild(el('rect',{x:100,y:168,width:168,height:144,fill:'#343a40'}));
+    if (has('E')) rdL.appendChild(el('rect',{x:412,y:168,width:168,height:144,fill:'#343a40'}));
+    rdL.appendChild(el('rect',{x:268,y:168,width:144,height:144,fill:'#495057'}));
+
+    if (currentTab===1) {
+        const nsDiv = scen.twoLane ? [304,376] : [292,316,364,388];
+        const ewDiv = scen.twoLane ? [204,276] : [192,216,264,288];
+        nsDiv.forEach(x=>{
+            rdL.appendChild(el('line',{x1:x,y1:0,x2:x,y2:168,stroke:'#adb5bd','stroke-width':1,'stroke-dasharray':'4,4'}));
+            rdL.appendChild(el('line',{x1:x,y1:312,x2:x,y2:480,stroke:'#adb5bd','stroke-width':1,'stroke-dasharray':'4,4'}));
+        });
+        ewDiv.forEach(y=>{
+            rdL.appendChild(el('line',{x1:100,y1:y,x2:268,y2:y,stroke:'#adb5bd','stroke-width':1,'stroke-dasharray':'4,4'}));
+            rdL.appendChild(el('line',{x1:412,y1:y,x2:580,y2:y,stroke:'#adb5bd','stroke-width':1,'stroke-dasharray':'4,4'}));
+        });
+    }
+
+    if (!scen.noCenterline) {
+        const cl = {stroke:'white','stroke-width':2,opacity:0.5};
+        if (has('N')) rdL.appendChild(el('line',{x1:340,y1:0,x2:340,y2:168,...cl}));
+        if (has('S')) rdL.appendChild(el('line',{x1:340,y1:312,x2:340,y2:480,...cl}));
+        if (has('W')) rdL.appendChild(el('line',{x1:100,y1:240,x2:268,y2:240,...cl}));
+        if (has('E')) rdL.appendChild(el('line',{x1:412,y1:240,x2:580,y2:240,...cl}));
+    }
+
+    if (currentTab===1 && (phase.peds || phase.stages)) drawPeds(stageOf(phase, 0).peds || phase.peds);
+
+    if (currentTab===1 && (phase.signals || phase.stages)) {
+        const sig0 = stageOf(phase, 0).signals || phase.signals;
+        const spos={nb:{x:446,y:335},sb:{x:216,y:68},eb:{x:194,y:325},wb:{x:450,y:87}};
+        const srot={nb:0, sb:180, eb:90, wb:-90};
+        const SIG_SCALE = (scen.arrows || '').length > 1 ? 0.58 : 0.70;
+        ['nb','sb','eb','wb'].forEach(dir=>{
+            const s=sig0[dir], {x:sx,y:sy}=spos[dir], rot=srot[dir];
+            const cx = sx + 12, cy = sy + 33;
+            const g=el('g', { transform: (rot ? `rotate(${rot}, ${cx}, ${cy}) ` : '') + `translate(${cx},${cy}) scale(${SIG_SCALE}) translate(${-cx},${-cy})` });
+            sgL.appendChild(g);
+            g.appendChild(el('rect',{x:sx,y:sy,width:24,height:66,fill:'black',rx:4}));
+            const redL=el('circle',{cx:sx+12,cy:sy+13,r:8,fill:s.m==='red'?'#ff0000':'#330000'});
+            const ambL=el('circle',{cx:sx+12,cy:sy+33,r:8,fill:'#332600'});
+            const grnL=el('circle',{cx:sx+12,cy:sy+53,r:8,fill:s.m==='green'?'#00ff00':'#003300'});
+            g.appendChild(redL); g.appendChild(ambL); g.appendChild(grnL);
+            const refs = { red: redL, amber: ambL, green: grnL };
+            if (scen.arrows && scen.arrows.includes('l')) refs.arrowL = drawArrowHead(g, sx - 36, sy - 11, -1, s.la || (s.l ? 'green' : 'red'));
+            if (scen.arrows && scen.arrows.includes('r')) refs.arrowR = drawArrowHead(g, sx + 34, sy - 11,  1, s.ra || (s.r ? 'green' : 'red'));
+            SIGNAL_REFS[dir] = refs;
+        });
+    }
+
+    const signSet = phase.signs || scen.signs;
+    if (currentTab===2 && signSet) {
+        const spos={nb:{x:430,y:350},sb:{x:250,y:130},eb:{x:210,y:330},wb:{x:470,y:150}};
+        const prot={nb:0, sb:180, eb:90, wb:-90};
+        const ARM_FOR={nb:'S', sb:'N', eb:'W', wb:'E'};
+        ['nb','sb','eb','wb'].forEach(dir=>{
+            if (signSet[dir]==='none' || !signSet[dir]) return;
+            if (ARMS.indexOf(ARM_FOR[dir]) < 0) return;
+            const t=signSet[dir], {x:sx,y:sy}=spos[dir];
+            const sg = el('g', { transform:`translate(${sx}, ${sy}) rotate(${prot[dir]}) scale(0.75) translate(${-sx}, ${-sy})` });
+            sgL.appendChild(sg);
+            if (phase.z) drawZPlate(sg, sx - 15, sy + 13, 30, phase.z, -prot[dir]);
+            if (t==='prio') {
+                sg.appendChild(el('polygon',{points:`${sx},${sy-15} ${sx+15},${sy} ${sx},${sy+15} ${sx-15},${sy}`,fill:'yellow',stroke:'white','stroke-width':2}));
+            } else if (t==='yield') {
+                sg.appendChild(el('polygon',{points:`${sx-15},${sy-10} ${sx+15},${sy-10} ${sx},${sy+15}`,fill:'white',stroke:'red','stroke-width':4}));
+            } else if (t==='stop') {
+                sg.appendChild(el('polygon',{points:`${sx-7},${sy-15} ${sx+7},${sy-15} ${sx+15},${sy-7} ${sx+15},${sy+7} ${sx+7},${sy+15} ${sx-7},${sy+15} ${sx-15},${sy+7} ${sx-15},${sy-7}`,fill:'red',stroke:'white','stroke-width':1}));
+                const st=el('text',{x:sx,y:sy+4,fill:'white','font-size':'10px','font-weight':'bold','text-anchor':'middle'});
+                st.textContent='STOP'; sg.appendChild(st);
+            }
+        });
+    }
+
+    phase.__pathEls = [];
+    const egoKeys = EGO[currentTab + '/' + scen.id + '/' + phase.id] || [];
+    const egoWanted = new Set(egoKeys.map(k => P[k])), egoSeen = new Set();
+    phase.paths.forEach(p=>{
+        if (p.type==='stopbar') {
+            ptL.appendChild(el('rect',{x:268,y:p.p==='nb'?308:168,width:72,height:6,fill:'#6c757d'}));
+            return;
+        }
+        const cmap={'var(--color-red)':'url(#arrow-red)','var(--color-blue)':'url(#arrow-blue)','var(--color-green)':'url(#arrow-green)','var(--color-orange)':'url(#arrow-orange)'};
+        const attrs={d:p.d,fill:'none',stroke:p.c,'stroke-width':3,opacity:0.42,'marker-end':cmap[p.c]||''};
+        if (p.dash) attrs['stroke-dasharray']='8,8';
+        if (p.ghost) { attrs.stroke = 'none'; attrs['marker-end'] = ''; }
+        ptL.appendChild(el('path',attrs));
+        if (!p.ghost) phase.__pathEls.push({ el: ptL.lastChild, color: p.c });
+        if (p.anim) {
+            const isEgo = !p.ghost && (p.isEgo || (egoWanted.has(p.d) && !egoSeen.has(p.d)));
+            if (isEgo) egoSeen.add(p.d);
+            animTargets.push({ el: ptL.lastChild, p, ego: isEgo });
+        }
+
+        if (p.label) {
+            const pathEl = ptL.lastChild, L = pathEl.getTotalLength();
+            const s = p.at !== undefined ? L * p.at : Math.min(70, L * 0.3);
+            const a = pathEl.getPointAtLength(s), b = pathEl.getPointAtLength(Math.min(L, s + 2));
+            let tx = b.x - a.x, ty = b.y - a.y; const n = Math.hypot(tx, ty) || 1; tx /= n; ty /= n;
+            const nx = -ty, ny = tx, lx = a.x + nx * 12, ly = a.y + ny * 16 + 4;
+            const anchor = nx > 0.5 ? 'start' : (nx < -0.5 ? 'end' : 'middle');
+            const t = el('text', { x: lx, y: ly, fill: p.c, 'font-size': '13px', 'font-weight': 'bold', 'text-anchor': anchor, 'paint-order': 'stroke', stroke: 'black', 'stroke-width': '3px' });
+            t.textContent = p.label; ptL.appendChild(t);
+        }
+    });
+
+    addFollowers(ptL);
+    drawKey();
+    drawAnnotations(phase);
+
+    (phase.markers||[]).forEach(m=>{
+        if (m.type==='conflict') {
+            mkL.appendChild(el('circle',{cx:m.x,cy:m.y,r:5.5,fill:'red'}));
+        } else if (m.type==='diamond') {
+            mkL.appendChild(el('polygon',{points:`${m.x},${m.y-8} ${m.x+8},${m.y} ${m.x},${m.y+8} ${m.x-8},${m.y}`,fill:'orange',stroke:'white','stroke-width':1}));
+        }
+    });
+}
+
+const MOVE = {
+    S: { N:'r_nb_s', E:'r_nb_r', W:'r_nb_l' },
+    N: { S:'r_sb_s', W:'r_sb_r', E:'r_sb_l' },
+    W: { E:'r_eb_s', S:'r_eb_r', N:'r_eb_l' },
+    E: { W:'r_wb_s', N:'r_wb_r', S:'r_wb_l' }
+};
+const APPROACH = { S:'nb', N:'sb', W:'eb', E:'wb' }, LONG = { N:'north', S:'south', E:'east', W:'west' };
+
+const Z_VARIANTS = [
+  { n:'1002-10', cross:true,  prio:['S','W'], minors:['N','E'], de:'von unten nach links' },
+  { n:'1002-11', cross:true,  prio:['N','W'], minors:['S','E'], de:'von oben nach links' },
+  { n:'1002-20', cross:true,  prio:['S','E'], minors:['N','W'], de:'von unten nach rechts' },
+  { n:'1002-21', cross:true,  prio:['N','E'], minors:['S','W'], de:'von oben nach rechts' },
+  { n:'1002-12', cross:false, prio:['S','W'], minors:['N'], de:'von unten nach links, Einmündung von oben' },
+  { n:'1002-13', cross:false, prio:['S','W'], minors:['E'], de:'von unten nach links, Einmündung von rechts' },
+  { n:'1002-14', cross:false, prio:['N','W'], minors:['S'], de:'von oben nach links, Einmündung von unten' },
+  { n:'1002-22', cross:false, prio:['S','E'], minors:['N'], de:'von unten nach rechts, Einmündung von oben' },
+  { n:'1002-23', cross:false, prio:['S','E'], minors:['W'], de:'von unten nach rechts, Einmündung von links' },
+  { n:'1002-24', cross:false, prio:['N','E'], minors:['S'], de:'von oben nach rechts, Einmündung von unten' }
+];
+
+const LONGARM = { N:'north', S:'south', E:'east', W:'west' }, mv = (a, b) => a + '\u2192' + b;
+
+const CASES_10 = [
+  { sub:1, from:'S', ego:['S','W'], free:[['W','S']], why:'We are on the priority road and simply follow it round the bend. The car coming the other way along the bend is doing the same thing, and the two paths never meet. Nobody gives way.' },
+  { sub:1, from:'S', ego:['S','N'], free:[['W','S']], after:[['W','N']], why:'We leave the priority road and carry straight on. The west arm is on the priority road too, but we are on its right-hand side, so W\u2192N holds back and lets us through \u2014 it wants the same lane we are heading for. W\u2192S does not wait, and does not need to: it follows the bend round into the near side of the south arm and never reaches our lane at all.' },
+  { sub:1, from:'S', ego:['S','E'], free:[['S','N'],['W','S']], after:[['W','N'],['W','E']], why:'We turn left off the priority road, with another car from our own arm going straight on. From the west, W\u2192S follows the bend and never crosses us, so it does not wait; W\u2192N waits for the S\u2192N car, and W\u2192E waits for both of us.' },
+  { sub:2, from:'W', ego:['W','S'], free:[['S','W']], why:'We are on the priority road, following the bend down into the south arm. The car coming the other way round the bend uses the other side of the road. Nothing crosses, so nobody waits.' },
+  { sub:2, from:'W', ego:['W','E'], first:[['S','W'],['S','N'],['S','E']], why:'We leave the priority road going straight on. The south arm is on our right, so everything coming out of it goes first \u2014 the S\u2192W car round the bend, and the S\u2192N and S\u2192E cars crossing in front of us.' },
+  { sub:2, from:'W', ego:['W','N'], first:[['S','W'],['S','N']], why:'Turning right off the priority road into the north arm. The south arm is on our right, so we let S\u2192W past, and S\u2192N as well because it is heading into the very lane we want.' },
+  { sub:3, from:'N', ego:['N','S'], first:[['S','W'],['W','S'],['W','E'],['W','N']], why:'We are on a give-way arm, crossing the priority road from end to end. Everything on it goes first, whichever way round the bend it is travelling \u2014 the S\u2192W car, and all three movements out of the west arm.' },
+  { sub:3, from:'N', ego:['N','W'], first:[['S','W']], why:'We turn right out of the give-way arm straight onto the priority road. The only car in our way is S\u2192W, which is already using the lane we want. Once it is past, we go.' },
+  { sub:3, from:'N', ego:['N','E'], first:[['S','N'],['S','E'],['W','N'],['W','E']], why:'Turning left out of the give-way arm is the worst of it: we cross the whole junction. We wait for everything that crosses or joins our path \u2014 S\u2192N and W\u2192N feeding the lane behind us, and S\u2192E and W\u2192E crossing in front.' },
+  { sub:4, from:'E', ego:['E','N'], first:[['S','N'],['W','N']], why:'We turn right out of the give-way arm into the north arm. Two cars are already heading into that lane \u2014 S\u2192N and W\u2192N \u2014 so we let both of them in first and then follow.' },
+  { sub:4, from:'E', ego:['E','W'], first:[['S','W'],['S','N'],['W','N'],['N','S'],['N','W'],['N','E']], why:'Straight across, from the give-way arm. First the priority road: S\u2192W and S\u2192N, and W\u2192N. Then the north arm \u2014 it is a give-way arm like ours, but it is on our right, so all three of its movements still go before we do. We are last.' },
+  { sub:4, from:'E', ego:['E','S'], first:[['S','W'],['S','N'],['W','S'],['W','E'],['N','S'],['N','E']], why:'Turning left out of the give-way arm. We wait for the priority road both ways round the bend, and then for the north arm as well, because it is on our right \u2014 N\u2192S is coming down into the very lane we are turning into, and N\u2192E crosses us on its way out.' }
+];
+
+const CASES_12 = [
+  { sub:1, from:'S', ego:['S','W'], free:[['W','S']], why:'We are on the priority road, following it round the bend to the west. The car coming the other way does the same. Nobody gives way.' },
+  { sub:1, from:'S', ego:['S','N'], free:[['W','S']], after:[['W','N']], why:'We leave the priority road and carry straight on into the side road. The west arm is on the priority road too, but we are on its right, so W\u2192N holds back for us \u2014 it is heading into the same lane. W\u2192S has no need to wait: round the bend it stays on the near side of the south arm and never crosses us.' },
+  { sub:2, from:'W', ego:['W','S'], free:[['S','W']], why:'On the priority road, following the bend down into the south arm. Nothing crosses our path, so nobody waits.' },
+  { sub:2, from:'W', ego:['W','N'], first:[['S','W'],['S','N']], why:'We leave the priority road into the side arm. The south arm is on our right, so S\u2192W goes first, and S\u2192N too because it is heading into the same lane we want.' },
+  { sub:3, from:'N', ego:['N','S'], first:[['S','W'],['W','S'],['W','N']], why:'We come out of the side road and cross the priority road completely. Everything on the priority road goes first, both ways round the bend.' },
+  { sub:3, from:'N', ego:['N','W'], first:[['S','W']], why:'Turning right out of the side road onto the priority road. Only the S\u2192W car is in the lane we want, so we wait for it and then join.' }
+];
+
+const RIGHT_OF = { N:'W', W:'S', S:'E', E:'N' };
+
+function armOrder(v) {
+    const [p1, p2] = v.prio, prioFirst = RIGHT_OF[p1] === p2 ? p2 : p1;
+    const ms = v.minors, minorFirst = ms.length < 2 ? ms[0] : (RIGHT_OF[ms[0]] === ms[1] ? ms[1] : ms[0]);
+    return { prioFirst, prioSecond: prioFirst === p1 ? p2 : p1, minorFirst, minorSecond: ms.find(m => m !== minorFirst) };
+}
+
+function rankOf(v, a, b) {
+    const o = armOrder(v), [p1, p2] = v.prio;
+    if ((a === p1 && b === p2) || (a === p2 && b === p1)) return 1;
+    if (a === o.prioFirst) return 2;
+    if (a === o.prioSecond) return 3;
+    return a === o.minorFirst ? 4 : 5;
+}
+
+function buildCasePhase(v, id, cs) {
+    const arms = v.prio.concat(v.minors), paths = [], signs = {};
+    arms.forEach(a => { signs[APPROACH[a]] = v.prio.indexOf(a) >= 0 ? 'prio' : 'yield'; });
+
+    const seen = {};
+    const add = (a, b, opts) => {
+        const r = rankOf(v, a, b);
+        const i = (seen[r] = (seen[r] || 0) + 1) - 1;
+        const anim = { startAt: 0.2 + 0.26 * (r - 1) + 0.3 * i, tag: mv(a, b) };
+        
+        // FIX: Only add a yield hold if this is not the ego vehicle, 
+        // OR if it is the ego vehicle and it actually has cars to give way to (cs.first)
+        const isEgoVehicle = opts && opts.isEgo;
+        const egoMustYield = (cs.first || []).length > 0;
+
+        if (r > 1 && (!isEgoVehicle || egoMustYield)) { 
+            anim.hold = 1; 
+            anim.resumeAt = r * 10 + i; 
+            anim.maxWait = 18; 
+        }
+        
+        paths.push(Object.assign({ d:'P:' + MOVE[a][b], rank: r, anim }, opts));
+        return r;
+    };
+
+    (cs.first || []).forEach(([a, b], i) => add(a, b, { c:'var(--color-red)', dash: rankOf(v, a, b) > 1, label: i === 0 ? '1st' : undefined, at: 0.12 + 0.04 * i }));
+    (cs.free || []).forEach(([a, b]) => add(a, b, { c:'var(--color-red)', at: 0.18 }));
+    const waits = (cs.first || []).length > 0;
+    add(cs.ego[0], cs.ego[1], { c:'var(--color-blue)', dash: waits, isEgo: true, at: 0.22, label: waits ? 'YIELDS' : 'PRIORITY' });
+    (cs.after || []).forEach(([a, b], i) => add(a, b, { c:'var(--color-orange)', dash:true, at: 0.14 + 0.05 * i, label: i === 0 ? 'waits for us' : undefined }));
+
+    const head = 'Ego ' + mv(cs.ego[0], cs.ego[1]) + ' \u2014 from the ' + LONGARM[cs.from] + ' arm';
+    const eTurn = turnBetween(cs.ego[0], cs.ego[1]), onPrioBend = v.prio.indexOf(cs.ego[0]) >= 0 && v.prio.indexOf(cs.ego[1]) >= 0;
+    const blink = eTurn ? ('We indicate <b>' + (eTurn === 'L' ? 'left' : 'right') + '</b>' + (onPrioBend ? ', even though we never leave the priority road: the road turns, so we turn, and \u00a79 goes by the direction we travel.' : '.')) : ('No indicator \u2014 we carry straight on' + (v.prio.indexOf(cs.ego[0]) >= 0 ? ', and leaving the priority road is not in itself a change of direction.' : '.'));
+
+    const WHY_RANK = { 1:'the priority road, round the bend', 2:'', 3:'', 4:'', 5:'' }, byRank = {};
+    paths.forEach(p => { (byRank[p.rank] = byRank[p.rank] || []).push(p.anim.tag + (p.isEgo ? ' (us)' : '')); });
+    const order = Object.keys(byRank).sort().map((r, i) => '<b>' + (i + 1) + '.</b> ' + [...new Set(byRank[r])].join(', ') + (WHY_RANK[r] ? ' \u2014 ' + WHY_RANK[r] : '')).join('<br>');
+    return { id, title: String(cs.sub) + '\u00b7' + mv(cs.ego[0], cs.ego[1]), arms, signs, z: v, paths, markers: [], spec: cs, text: '<b>DE ' + v.n + '</b> \u2014 <i>' + v.de + '</i><br>' + '<b>' + head + '</b><br><br>' + cs.why + '<br><br><b>Order of play</b><br>' + order + '<br><br><b>Indicator</b><br>' + blink };
+}
+
+function caseScenario(id, title, v, list) {
+    return { id, title, signs:null, phases: list.map((cs, i) => buildCasePhase(v, i + 1, cs)) };
+}
+
+(function () {
+    const V10 = Z_VARIANTS.find(v => v.n === '1002-10'), V12 = Z_VARIANTS.find(v => v.n === '1002-12');
+    const scens = DB[2].scenarios, at = scens.findIndex(s => s.id === 5) + 1;
+    scens.splice(at, 0, caseScenario(7, '5b — DE 1002-10, every movement', V10, CASES_10), caseScenario(8, '5c — DE 1002-12, every movement', V12, CASES_12));
+    scens.forEach(sc => (sc.phases || []).forEach(ph => (ph.paths || []).forEach(p => { if (typeof p.d === 'string' && p.d.indexOf('P:') === 0) p.d = P[p.d.slice(2)]; })));
+})();
+
+switchTab(1);
+</script>
+</body>
+</html>
