@@ -72,9 +72,10 @@ class SchemaConfig:
     # known. Add yours to whichever tuple fits; unknown lane_types are skipped
     # with a warning rather than silently ignored, so the log will name it.
     crosswalk_values: tuple = ("crosswalk", "pedestrian_crossing", "zebra",
-                               "pedestrian", "walkway", "footpath")
+                               "pedestrian", "walkway", "footpath",
+                               "pedestrian_markings", "pedestrian marking")
     cycle_values: tuple = ("bicycle_crossing", "cycle_crossing", "bicycle",
-                           "cycleway", "bike_crossing")
+                           "cycleway", "bike_crossing", "cycle")
 
     # traffic_rule may hold several re_ids in one cell. Any of these
     # characters separates them. The export shows single values (re_975), but

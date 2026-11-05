@@ -33,7 +33,7 @@ LAYER_NAME = None
 ROAD_IDS = None
 
 # Paths closer than this (METRES) count as conflicting.
-CLEARANCE = 0.2
+CLEARANCE = 0.1
 
 # The CRS the maths runs in; must be projected (metres), never degrees.
 # None = worked out automatically. "EPSG:25832" to pin the German standard.

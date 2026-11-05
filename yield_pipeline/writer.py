@@ -30,7 +30,41 @@ def format_yield_to(targets: Sequence[Movement],
     if not targets:
         return cfg.output.write_empty_as
 
-    items = [format_item(m, cfg) for m in targets]
+    # Group cycle lanes by road_id to find the lowest way_id
+    cycle_groups = {}
+    for t in targets:
+        lane_type = t.raw.get(cfg.schema.lane_type, "").lower()
+        if lane_type in cfg.schema.cycle_values:
+            rid = str(t.road_id)
+            wid_str = str(t.way_id)
+            # Compare numerically if possible, otherwise alphabetically
+            wid = int(wid_str) if wid_str.isdigit() else wid_str
+            if rid not in cycle_groups or wid < cycle_groups[rid]:
+                cycle_groups[rid] = wid
+
+    items = []
+    for target in targets:
+        lane_type = target.raw.get(cfg.schema.lane_type, "").lower()
+        
+        # Pedestrians: road_id only
+        if lane_type in cfg.schema.crosswalk_values:
+            item = str(target.road_id)
+            if cfg.output.quote_items:
+                item = f'"{item}"'
+            items.append(item)
+            
+        # Cycle lanes: road_id and the lowest way_id found for that road
+        elif lane_type in cfg.schema.cycle_values:
+            min_way_id = cycle_groups[str(target.road_id)]
+            item = cfg.output.item_template.format(road_id=target.road_id, way_id=min_way_id)
+            if cfg.output.quote_items:
+                item = f'"{item}"'
+            items.append(item)
+            
+        # Standard vehicles: default formatting
+        else:
+            items.append(format_item(target, cfg))
+
     if cfg.output.deduplicate:
         seen, unique = set(), []
         for item in items:
@@ -38,8 +72,10 @@ def format_yield_to(targets: Sequence[Movement],
                 seen.add(item)
                 unique.append(item)
         items = unique
+        
     if cfg.output.sort_items:
         items.sort()
+        
     return cfg.output.item_separator.join(items)
 
 

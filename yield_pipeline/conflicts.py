@@ -28,9 +28,25 @@ def detect_conflicts(movements: Sequence[Movement],
     """All unordered conflicting pairs among the junction's movements."""
     vehicles = [m for m in movements if not m.is_vru]
     out: List[Conflict] = []
+    snap = cfg.geometry.point_snap
+
+    def touch(m1, m2):
+        """Check if the end of one line touches the start of the other."""
+        p1_end, p2_start = m1.geometry[-1], m2.geometry[0]
+        p2_end, p1_start = m2.geometry[-1], m1.geometry[0]
+        d1 = ((p1_end[0] - p2_start[0])**2 + (p1_end[1] - p2_start[1])**2)**0.5
+        d2 = ((p2_end[0] - p1_start[0])**2 + (p2_end[1] - p1_start[1])**2)**0.5
+        return d1 <= snap or d2 <= snap
 
     for i, a in enumerate(vehicles):
         for b in vehicles[i + 1:]:
+            # Reconfirm intersection morphology and check if coordinates connect
+            is_int_a = a.raw.get(cfg.schema.lane_morphology, "").lower() == cfg.schema.intersection_value
+            is_int_b = b.raw.get(cfg.schema.lane_morphology, "").lower() == cfg.schema.intersection_value
+            
+            if is_int_a and is_int_b and touch(a, b):
+                continue
+                
             conflict = classify_pair(a, b, cfg)
             if conflict.kind is not ConflictType.NONE:
                 out.append(conflict)
