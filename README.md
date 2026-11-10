@@ -11,7 +11,7 @@ way to whom.
 
 ## 1. What it does
 
-**In:** an HD Lane Map GeoJSON, with one intersection selected in QGIS.
+**In:** a HD Lane Map GeoJSON, with one intersection selected in QGIS.
 
 **Out:**
 - the `yield_to` field filled in on every centerline at that intersection
@@ -25,7 +25,7 @@ way to whom.
 - yield sign (DE 205)
 - priority sign (DE 306 / DE 301)
 - priority path sign (DE 1002-xx — a priority road that turns)
-- traffic lights (red / amber / green, and controlled turn arrows)
+- traffic lights (red / yellow / green, and controlled turn arrows)
 
 ---
 
@@ -80,7 +80,7 @@ have it.
 ### Before you run: check lane direction is correct
 
 Lane direction comes from `way_id`. The converter's `correct_lane_direction`
-only fixes a lane when **both of its outer borders are present** in the data —
+only fixes a lane when **both of its outer borders are present** in the data 
 if a border is missing it quietly skips that lane and leaves it drawn
 backwards.
 
@@ -94,7 +94,7 @@ but it cannot fix a junction whose borders are not there.
 
 ### Coordinate system
 
-The layer may be in degrees (EPSG:4326) — the tool reprojects to metres by
+The layer may be in degrees (EPSG:4326)  the tool reprojects to metres by
 itself and does **not** modify your layer.
 
 ---
@@ -195,7 +195,7 @@ generously — or select several junctions at once.
 ```
 
 **Step 5 happens before step 6.** A car can be on your right and you still do
-not give way — because your paths never meet. A right turn leaves the junction
+not give way because your paths never meet. A right turn leaves the junction
 straight away and never touches the traffic coming from the right.
 
 That one idea removes most special cases: four cars all turning right yield to
