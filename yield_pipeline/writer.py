@@ -91,6 +91,35 @@ def build_yield_to_map(result: PipelineResult,
     return out
 
 
+def yield_line_geometry(movement: Movement, result: PipelineResult,
+                        cfg: PipelineConfig = DEFAULT_CONFIG
+                        ) -> Tuple[Point, Point]:
+    """Bar across `movement` a setback before its first conflict point."""
+    g = cfg.geometry
+    earliest = float("inf")
+    for rel in result.relations:
+        if rel.ego is not movement:
+            continue
+        hits = geo.polyline_intersections(movement.geometry, rel.other.geometry)
+        for hit in hits:
+            earliest = min(earliest, geo.distance_along(movement.geometry, hit))
+        if not hits:
+            # merge case: use the closest approach between the two paths
+            for pa in geo.densify(movement.geometry, 2.0):
+                for pb in geo.densify(rel.other.geometry, 2.0):
+                    if geo.distance(pa, pb) <= g.conflict_clearance * 2:
+                        earliest = min(earliest,
+                                       geo.distance_along(movement.geometry, pa))
+                        break
+
+    total = geo.polyline_length(movement.geometry)
+    if earliest == float("inf"):
+        s = max(0.0, total * 0.25)
+    else:
+        s = max(0.0, earliest - g.yield_line_setback)
+    return geo.perpendicular_at(movement.geometry, s, g.yield_line_half_width)
+
+
 def build_yield_lines(result: PipelineResult,
                       cfg: PipelineConfig = DEFAULT_CONFIG
                       ) -> List[Dict]:
@@ -99,43 +128,13 @@ def build_yield_lines(result: PipelineResult,
     Placed a setback before the first point of conflict on that movement, so
     it lands at the hold line rather than inside the junction.
     """
-    g = cfg.geometry
-    conflicts = []
-    for rel in result.relations:
-        conflicts.append(rel)
-
     lines: List[Dict] = []
     for movement in result.junction.movements:
         targets = result.yield_to.get(movement.feature_id, [])
         if movement.is_vru or not targets:
             continue
 
-        # Earliest conflict point along this movement's own geometry.
-        earliest = float("inf")
-        for rel in result.relations:
-            if rel.ego is not movement:
-                continue
-            hits = geo.polyline_intersections(movement.geometry,
-                                              rel.other.geometry)
-            for hit in hits:
-                earliest = min(earliest, geo.distance_along(movement.geometry, hit))
-            if not hits:
-                # merge case: use the closest approach between the two paths
-                for pa in geo.densify(movement.geometry, 2.0):
-                    for pb in geo.densify(rel.other.geometry, 2.0):
-                        if geo.distance(pa, pb) <= cfg.geometry.conflict_clearance * 2:
-                            earliest = min(
-                                earliest,
-                                geo.distance_along(movement.geometry, pa))
-                            break
-
-        total = geo.polyline_length(movement.geometry)
-        if earliest == float("inf"):
-            s = max(0.0, total * 0.25)
-        else:
-            s = max(0.0, earliest - g.yield_line_setback)
-
-        p1, p2 = geo.perpendicular_at(movement.geometry, s, g.yield_line_half_width)
+        p1, p2 = yield_line_geometry(movement, result, cfg)
         lines.append({
             "feature_id": movement.feature_id,
             "road_id": movement.road_id,

@@ -15,7 +15,7 @@ way to whom.
 
 **Out:**
 - the `yield_to` field filled in on every centerline at that intersection
-- yield lines drawn on the map
+- wait lines linked to those centerlines (see section 5a)
 - a report saying which rules were used and why
 
 **Rules it applies:**
@@ -227,6 +227,57 @@ direction looks wrong, or two lanes each told to yield to the other.
 
 ---
 
+## 5a. Wait lines (MP-468)
+
+A wait line is a regulatory element drawn across the lane where the car
+waits: `lane_type=regulatory_element`, `line_type=traffic_sign`,
+`line_sub` = `(de341)` Wartelinie or `(de294)` Haltlinie.
+
+For every centerline at the junction the tool:
+
+1. **finds its wait line** — first one already named in `traffic_rule`
+   (`linked`), otherwise an unlinked one drawn within 1.5 m of the first
+   10 m of the centerline (`matched`)
+2. **or creates one** if the lane has to give way and none is drawn (`new`),
+   placed where the yield line used to go, with the next free `re_id`
+   (`re_975` in the map → `re_976`). `(de294)` on stop-sign or signalised
+   arms, `(de341)` everywhere else
+3. **links it** — appends the wait line's `re_id` to the centerline's
+   `traffic_rule` (`re_975` → `re_975,re_976`)
+4. **aligns `yield_to`** — the wait line gets the centerline's `yield_to`
+
+Where they are written:
+
+| What | Where |
+|---|---|
+| Existing wait lines (`yield_to`, missing `re_id`) | updated in place, in the HD map layer |
+| `traffic_rule` on centerlines | HD map layer |
+| New wait lines | **`Wait lines`** layer, for review |
+
+`Wait lines` is a temporary layer. The centerlines already point at its
+`re_id`s, so **save it or copy its features into the HD map layer** before
+closing QGIS. Re-running is safe: lines in `Wait lines` are found and updated,
+not duplicated.
+
+One wait line across a lane that feeds several centerlines (left / straight /
+right) gets the **union** of their `yield_to`. The report warns when those
+differ, so check it.
+
+Console output:
+
+```
+wait lines
+  road/way        move     status   re_id       yield_to
+  RN/WNS          N->S     new      re_991      RE_WEW,RW_WWE
+  RS/WSN          S->N     matched  re_990      RE_WEN,RE_WEW,RW_WWE
+  -> 1 new, 1 existing updated, 2 traffic_rule link(s) added
+```
+
+Settings are in `WaitLineConfig` in `config.py`. `WAIT_LINES = False` at the
+top of `run_in_console.py` brings back the old throwaway yield-line layer.
+
+---
+
 ## 6. Files you open
 
 | File | What for |
@@ -249,6 +300,8 @@ In `yield_pipeline/config.py`.
 | `conflict_clearance` | `1.0` m | Real conflicts are being missed on loosely drawn turns |
 | `item_template` | `{road_id}''_{way_id}` | The `yield_to` format changes |
 | `right_hand_traffic` | `True` | .... |
+| `WaitLineConfig.codes` | `("341", "294")` | Wait lines use another `line_sub` |
+| `WaitLineConfig.match_radius` | `1.5` m | Drawn wait lines are not being found, or a neighbour's is picked |
 
 ---
 
@@ -261,7 +314,7 @@ In `yield_pipeline/config.py`.
 | Yield / stop / priority signs | Need to test the |
 | Priority path sign (1002-xx) | Written, **not tested** |
 | Traffic lights | Written, **not tested** |
-| Yield lines | Update needed |
+| Wait lines: re_id, link to centerline, yield_to (MP-468) | Done, tested offline — **needs a run on real data** |
 | Writing `yield_to` | Done |
 | Cycle lanes | **Not yet** — reported and needs to add |
 | Animation visualisation | **Done** — scripts/German Intersection Rules Animation.html |

@@ -200,7 +200,15 @@ def write_yield_to(layer, cells: Dict[str, str],
     `cells` is keyed by the feature_id the pipeline used, which for QGIS
     features is '<layer id>:<fid>'.
     """
-    field = cfg.schema.yield_to
+    return write_field(layer, cells, cfg.schema.yield_to)
+
+
+def write_field(layer, cells: Dict[str, str], field: str) -> int:
+    """Write {feature_id: value} into `field` on `layer`. Returns rows changed.
+
+    Keys belonging to another layer ('<other id>:<fid>') are skipped, so the
+    same dict can be offered to every layer in turn.
+    """
     ensure_field(layer, field)
     index = layer.fields().indexFromName(field)
     if index < 0:
@@ -262,6 +270,75 @@ def yield_lines_layer(lines: Sequence[dict], crs, name: str = "Yield lines"):
     provider.addFeatures(features)
     layer.updateExtents()
     return layer
+
+
+# ------------------------------------------------------------- wait lines ---
+
+def find_layer(name: str):
+    from qgis.core import QgsProject
+    matches = QgsProject.instance().mapLayersByName(name)
+    return matches[0] if matches else None
+
+
+def wait_lines_layer(crs, cfg: PipelineConfig = DEFAULT_CONFIG):
+    """The review layer for new wait lines: reused if present, else created.
+
+    Field names follow the HD map schema so the features can be copied
+    straight into the map layer; 'centerline' and 'movement' are review aids.
+    """
+    from qgis.core import QgsField, QgsProject, QgsVectorLayer
+    from qgis.PyQt.QtCore import QVariant
+
+    name = cfg.wait_lines.layer_name
+    layer = find_layer(name)
+    if layer is not None:
+        return layer
+    s = cfg.schema
+    names = [s.lane_type, s.line_type, s.line_sub, s.re_id, s.yield_to,
+             "centerline", "movement"]
+    uri = f"LineString?crs={crs.authid()}"
+    layer = QgsVectorLayer(uri, name, "memory")
+    layer.dataProvider().addAttributes(
+        [QgsField(n, QVariant.String, len=2000) for n in names])
+    layer.updateFields()
+    style_wait_lines(layer)
+    QgsProject.instance().addMapLayer(layer)
+    return layer
+
+
+def add_wait_lines(layer, records: Sequence[dict], source_crs) -> int:
+    """Append planned wait lines (geometry in `source_crs`) to `layer`."""
+    from qgis.core import QgsFeature, QgsGeometry, QgsPointXY
+
+    transform = None
+    if source_crs is not None and source_crs != layer.crs():
+        from qgis.core import QgsCoordinateTransform, QgsProject
+        transform = QgsCoordinateTransform(source_crs, layer.crs(),
+                                           QgsProject.instance())
+    if not layer.isEditable():
+        layer.startEditing()
+    names = [f.name() for f in layer.fields()]
+    added = 0
+    for rec in records:
+        feature = QgsFeature(layer.fields())
+        geom = QgsGeometry.fromPolylineXY(
+            [QgsPointXY(x, y) for x, y in rec["geometry"]])
+        if transform is not None:
+            geom.transform(transform)
+        feature.setGeometry(geom)
+        feature.setAttributes([rec["attributes"].get(n) for n in names])
+        if layer.addFeature(feature):
+            added += 1
+    return added
+
+
+def style_wait_lines(layer) -> None:
+    from qgis.core import QgsLineSymbol
+    symbol = QgsLineSymbol.createSimple({
+        "color": "230,120,0,255", "width": "0.9", "capstyle": "flat",
+        "line_style": "dash"})
+    layer.renderer().setSymbol(symbol)
+    layer.triggerRepaint()
 
 
 def style_yield_lines(layer) -> None:

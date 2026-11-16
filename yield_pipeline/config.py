@@ -274,12 +274,62 @@ class RuleConfig:
 
 
 @dataclass
+class WaitLineConfig:
+    """MP-468 - wait lines: re_id, link to centerline, yield_to.
+
+    A wait line is a regulatory element (lane_type=regulatory_element,
+    line_type=traffic_sign) drawn as a line across the lane where the car
+    waits. Its line_sub says which marking it is:
+
+        de341  Wartelinie  - wait line (give way, right-before-left)
+        de294  Haltlinie   - stop line (DE 206 stop sign, traffic lights)
+
+    For every centerline that has to give way the pipeline
+      1. finds its wait line - first one already named in traffic_rule,
+         then one drawn near the start of the centerline,
+      2. or creates one at the yield-line position, with a new re_id,
+      3. appends the wait line's re_id to the centerline's traffic_rule,
+      4. writes the centerline's yield_to onto the wait line.
+    """
+
+    enabled: bool = True
+
+    # line_sub codes that mark a regulatory element as a wait line.
+    codes: tuple = ("341", "294")
+
+    # line_sub written on a NEW wait line. Stop line where the arm has a
+    # stop sign or a light, wait line everywhere else.
+    new_code: str = "de341"
+    new_code_stop: str = "de294"
+    # The export writes codes in brackets: (de341).
+    line_sub_template: str = "({code})"
+
+    # New re_ids continue the highest number already in the layer, e.g.
+    # re_975 -> re_976. Prefix used when nothing in the layer has a number.
+    re_id_prefix: str = "re_"
+
+    # Matching an existing, unlinked wait line to a centerline (metres): the
+    # wait line must come within match_radius of the first entry_window
+    # metres of the centerline. Lanes are ~3.5 m apart, so keep this under
+    # half a lane plus a little, or a neighbour's wait line gets picked.
+    match_radius: float = 1.5
+    entry_window: float = 10.0
+
+    # A regulatory element shorter than this is a sign post, not a line.
+    min_length: float = 1.0
+
+    # Layer new wait lines go into (created if missing, reused if present).
+    layer_name: str = "Wait lines"
+
+
+@dataclass
 class PipelineConfig:
     schema: SchemaConfig = field(default_factory=SchemaConfig)
     output: OutputConfig = field(default_factory=OutputConfig)
     signs: SignCodes = field(default_factory=SignCodes)
     geometry: GeometryConfig = field(default_factory=GeometryConfig)
     rules: RuleConfig = field(default_factory=RuleConfig)
+    wait_lines: WaitLineConfig = field(default_factory=WaitLineConfig)
 
 
 DEFAULT_CONFIG = PipelineConfig()

@@ -45,6 +45,11 @@ JUNCTION_SPACING = 25.0
 # Per-feature detail. Turn off once you trust the output.
 VERBOSE = True
 
+# MP-468: link wait lines to the centerlines. Existing wait lines get re_id /
+# yield_to updated in place; missing ones go into the "Wait lines" layer for
+# review. False = old behaviour (throwaway "Yield lines" preview layer).
+WAIT_LINES = True
+
 
 # ===========================================================================
 #  Nothing below here needs editing.
@@ -131,7 +136,8 @@ def cluster_by_distance(records, spacing):
     return groups
 
 
-def run_one(yp, layer, features, cfg, label, work_crs):
+def run_one(yp, layer, features, cfg, label, work_crs,
+            wait_candidates=(), allocator=None, wait_layer_ref=None):
     """Run the pipeline over one junction's features and report."""
     from yield_pipeline import qgis_adapter as qa
     from yield_pipeline.extract import ExtractionError
@@ -181,14 +187,25 @@ def run_one(yp, layer, features, cfg, label, work_crs):
         print(f"    {mv.road_id}/{mv.way_id:<10} {mv.key:<9} -> "
               f"{cells[mv.feature_id] or '(empty)'}")
 
+    plan = None
+    if WAIT_LINES:
+        plan = yp.plan_wait_lines(result, wait_candidates, allocator, cfg)
+        print()
+        print(yp.summarise_plan(plan))
+
     if DRY_RUN:
         print("\n  DRY_RUN is True - nothing written.")
         return result
 
     written = qa.write_yield_to(layer, cells, cfg)
-    qa.commit(layer)
     print(f"\n  Wrote {written} row(s) into '{cfg.schema.yield_to}'.")
 
+    if plan is not None:
+        write_wait_lines(qa, layer, plan, cfg, work_crs, wait_layer_ref)
+        qa.commit(layer)
+        return result
+
+    qa.commit(layer)
     lines = yp.build_yield_lines(result, cfg)
     if lines:
         # The geometry was computed in the working CRS, so the new layer must
@@ -198,6 +215,37 @@ def run_one(yp, layer, features, cfg, label, work_crs):
         QgsProject.instance().addMapLayer(lyr)
         print(f"  Added {len(lines)} yield line(s).")
     return result
+
+
+def write_wait_lines(qa, layer, plan, cfg, work_crs, wait_layer_ref):
+    """Apply one junction's wait-line plan. Commits the wait layer only."""
+    s = cfg.schema
+
+    # centerlines: wait line re_id appended to traffic_rule
+    n = qa.write_field(layer, plan.traffic_rule, s.traffic_rule)
+    print(f"  Linked {n} centerline(s): re_id added to '{s.traffic_rule}'.")
+
+    # existing wait lines: in the HD layer, or pending in the review layer
+    targets = [layer]
+    if wait_layer_ref.get("layer") is not None:
+        targets.append(wait_layer_ref["layer"])
+    for lyr in targets:
+        n = qa.write_field(lyr, plan.updates, s.yield_to)
+        m = qa.write_field(lyr, plan.re_id_fixes, s.re_id) if plan.re_id_fixes else 0
+        if n or m:
+            print(f"  Updated {n} existing wait line(s) in '{lyr.name()}'"
+                  + (f", {m} given a new re_id" if m else "") + ".")
+        if lyr is not layer:
+            qa.commit(lyr)
+
+    # new wait lines: into the review layer
+    if plan.new_lines:
+        if wait_layer_ref.get("layer") is None:
+            wait_layer_ref["layer"] = qa.wait_lines_layer(work_crs, cfg)
+        wl = wait_layer_ref["layer"]
+        n = qa.add_wait_lines(wl, plan.new_lines, work_crs)
+        qa.commit(wl)
+        print(f"  Added {n} new wait line(s) to '{wl.name()}'.")
 
 
 def main():
@@ -255,6 +303,15 @@ def main():
     # own lanes reference by re_id.
     regs = qa.collect_regulatory_elements(layer, cfg, work_crs)
 
+    # Wait lines already planned in an earlier run sit in the review layer;
+    # read them too, so a re-run updates them instead of adding duplicates.
+    wait_layer_ref = {"layer": qa.find_layer(cfg.wait_lines.layer_name)}
+    pending = (qa.collect_features([wait_layer_ref["layer"]], False, work_crs)
+               if wait_layer_ref["layer"] is not None else [])
+    allocator = yp.ReIdAllocator(
+        [r["attributes"].get(cfg.schema.re_id) for r in regs + pending],
+        cfg.wait_lines.re_id_prefix)
+
     # ---- split into junctions -------------------------------------------
     lanes = [f for f in chosen
              if str(f["attributes"].get("lane_type", "")).lower()
@@ -294,18 +351,28 @@ def main():
                 wanted_re.update(
                     x.strip() for x in
                     str(rule).replace(";", ",").split(",") if x.strip())
-        members += [r for r in regs
+        members += [r for r in regs + pending
                     if str(r["attributes"].get(cfg.schema.re_id)) in wanted_re]
 
         roads = sorted({str(l["attributes"].get("road_id")) for l in g["items"]})
         label = (f"Junction {i} of {len(groups)}  -  roads {', '.join(roads)}"
                  if len(groups) > 1 else f"Junction - roads {', '.join(roads)}")
-        res = run_one(yp, layer, qa.merge_unique(members), cfg, label, work_crs)
+        near = [r for r in regs + pending
+                if (midpoint(r) and math.dist(midpoint(r), g["mid"])
+                    < JUNCTION_SPACING * 2)
+                or str(r["attributes"].get(cfg.schema.re_id)) in wanted_re]
+        res = run_one(yp, layer, qa.merge_unique(members), cfg, label, work_crs,
+                      wait_candidates=qa.merge_unique(near),
+                      allocator=allocator, wait_layer_ref=wait_layer_ref)
         if res:
             results.append(res)
 
     banner(f"Done. {len(results)} junction(s) processed."
            + ("  DRY_RUN is on - nothing was written." if DRY_RUN else ""))
+    if WAIT_LINES and not DRY_RUN and wait_layer_ref.get("layer") is not None:
+        print(f"'{cfg.wait_lines.layer_name}' is a temporary layer. Centerlines")
+        print("now reference its re_ids - save it (right-click -> Make Permanent)")
+        print("or copy its features into the HD map layer before closing QGIS.")
 
 
 try:
