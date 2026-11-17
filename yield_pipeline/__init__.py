@@ -16,7 +16,8 @@ the Processing-Toolbox entry point.
 """
 
 from .config import (DEFAULT_CONFIG, GeometryConfig, OutputConfig,
-                     PipelineConfig, RuleConfig, SchemaConfig, SignCodes)
+                     PipelineConfig, RuleConfig, SchemaConfig, SignCodes,
+                     WaitLineConfig)
 from .conflicts import detect_conflicts
 from .extract import ExtractionError, build_junction
 from .model import (Arm, Conflict, ConflictType, Junction, Movement,
@@ -25,12 +26,16 @@ from .model import (Arm, Conflict, ConflictType, Junction, Movement,
 from .rules import evaluate
 from .writer import (build_yield_lines, build_yield_to_map, format_yield_to,
                      summarise)
+from .wait_lines import (ReIdAllocator, WaitLinePlan, is_wait_line,
+                         plan_wait_lines, summarise_plan)
 
 __all__ = [
     "run", "build_junction", "evaluate", "detect_conflicts",
     "build_yield_to_map", "build_yield_lines", "format_yield_to", "summarise",
     "PipelineConfig", "SchemaConfig", "OutputConfig", "SignCodes",
-    "GeometryConfig", "RuleConfig", "DEFAULT_CONFIG",
+    "GeometryConfig", "RuleConfig", "WaitLineConfig", "DEFAULT_CONFIG",
+    "plan_wait_lines", "summarise_plan", "is_wait_line", "ReIdAllocator",
+    "WaitLinePlan",
     "Junction", "Movement", "Arm", "Conflict", "ConflictType", "TurnType",
     "PriorityClass", "Reason", "YieldRelation", "PipelineResult",
     "ExtractionError",

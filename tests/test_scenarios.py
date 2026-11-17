@@ -290,8 +290,8 @@ def test_yield_to_cell_format():
     res = _run(make_junction([("S", "N"), ("E", "W"), ("E", "N")]))
     cells = build_yield_to_map(res)
     cell = cells[_fid(res, "S->N")]
-    #  road_id '' _ way_id , quoted, comma separated, de-duplicated, sorted
-    assert cell == '"RE\'\'_WEN","RE\'\'_WEW"', repr(cell)
+    #  road_id_way_id, comma separated, de-duplicated, sorted
+    assert cell == "RE_WEN,RE_WEW", repr(cell)
     # a centerline that yields to nobody gets an empty cell, not a null
     assert cells[_fid(res, "E->W")] == ""
 
